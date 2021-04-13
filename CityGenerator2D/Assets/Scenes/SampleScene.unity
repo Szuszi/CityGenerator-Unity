@@ -238,6 +238,8 @@ MonoBehaviour:
   maxDegree: 8
   maxMajorRoad: 1000
   maxMinorRoad: 10000
+  majorRoadThickness: 0.07
+  minorRoadThickness: 0.05
   mapSize: 20
   seed: 7
   drawNodes: 0

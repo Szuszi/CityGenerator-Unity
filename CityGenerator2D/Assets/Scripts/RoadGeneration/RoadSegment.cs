@@ -12,21 +12,21 @@ namespace Assets.Scripts
         public Node NodeFrom { get; set; }
         public Node NodeTo { get; set; }
 
-        public int leanIteration { get; set; }
-        public bool leanRight { get; set; }
-        public bool leanLeft { get; set; }
+        public int LeanIteration { get; set; }
+        public bool LeanRight { get; set; }
+        public bool LeanLeft { get; set; }
 
-        public bool endSegmen { get; set; }
+        public bool EndSegmen { get; set; }
 
         public RoadSegment(Node from, Node to, int leanNumb)
         {
             NodeFrom = from;
             NodeTo = to;
-            leanIteration = leanNumb;
+            LeanIteration = leanNumb;
 
-            leanLeft = false;
-            leanRight = false;
-            endSegmen = false;
+            LeanLeft = false;
+            LeanRight = false;
+            EndSegmen = false;
         }
 
         public bool IsCrossing(RoadSegment road) //Check if the given road intersects with this road

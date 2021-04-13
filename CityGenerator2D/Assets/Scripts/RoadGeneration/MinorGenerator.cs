@@ -73,7 +73,7 @@ namespace Assets.Scripts
                 if (IsClose(segment.NodeTo, road.NodeTo) && !streched)
                 {
                     segment.NodeTo = road.NodeTo;
-                    segment.endSegmen = true;
+                    segment.EndSegmen = true;
                     streched = true;
                     break;
                 }
@@ -93,7 +93,7 @@ namespace Assets.Scripts
                     if (IsClose(segment.NodeTo, road.NodeTo) && !streched)
                     {
                         segment.NodeTo = road.NodeTo;
-                        segment.endSegmen = true;
+                        segment.EndSegmen = true;
                         streched = true;
                         break;
                     }
@@ -117,16 +117,16 @@ namespace Assets.Scripts
 
             if (segment.NodeFrom.Edges.Count >= 4) return false; //nodeFrom has more than 4 edges
 
-            if (!segment.NodeFrom.isFree(Mathf.Atan2(segment.NodeTo.Y - segment.NodeFrom.Y, segment.NodeTo.X - segment.NodeFrom.X))) return false;  //direction is not free from NodeFrom
+            if (!segment.NodeFrom.IsFree(Mathf.Atan2(segment.NodeTo.Y - segment.NodeFrom.Y, segment.NodeTo.X - segment.NodeFrom.X))) return false;  //direction is not free from NodeFrom
 
-            if (!segment.NodeTo.isFree(Mathf.Atan2(segment.NodeFrom.Y - segment.NodeTo.Y, segment.NodeFrom.X - segment.NodeTo.X))) return false;  //direction is not free from NodeTo
+            if (!segment.NodeTo.IsFree(Mathf.Atan2(segment.NodeFrom.Y - segment.NodeTo.Y, segment.NodeFrom.X - segment.NodeTo.X))) return false;  //direction is not free from NodeTo
 
             return true;
         }
 
         private void GlobalGoals(RoadSegment segment)
         {
-            if (segment.endSegmen) return;
+            if (segment.EndSegmen) return;
 
             globalGoalsRoads.Clear();
 
@@ -159,7 +159,7 @@ namespace Assets.Scripts
         {
             foreach(RoadSegment segment in hwSegments)
             {
-                if (segment.endSegmen) continue;
+                if (segment.EndSegmen) continue;
 
                 Vector2 dirVector = new Vector2(segment.NodeTo.X - segment.NodeFrom.X, segment.NodeTo.Y - segment.NodeFrom.Y);
                 Vector2 normalVector1 = new Vector2(dirVector.y, -dirVector.x);

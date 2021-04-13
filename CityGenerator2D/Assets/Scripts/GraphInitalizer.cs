@@ -10,23 +10,25 @@ namespace Assets.Scripts
     public class GraphInitalizer : MonoBehaviour
     {
         private Graph roadGraph; //Graph which will be built, and then drawn
-        private Graph blockGraph;
+        private List<LotNode> LotNodes;
         private System.Random rand;
 
         public int maxDegree = 2;
         public int maxMajorRoad = 1000;
         public int maxMinorRoad = 10000;
+        public float majorRoadThickness = 0.07f;
+        public float minorRoadThickness = 0.05f;
         public int mapSize = 20;
         public int seed = 7;
         public bool drawNodes = false;
         public bool drawThickRoads = false;
         public bool drawBlockNodes = false;
 
+
         void Start()
         {
             rand = new System.Random(seed);
             roadGraph = new Graph();
-            blockGraph = new Graph();
             Thread t = new Thread(new ThreadStart(ThreadProc));
             t.Start();
 
@@ -84,12 +86,20 @@ namespace Assets.Scripts
 
             if (drawBlockNodes)
             {
-                DrawNodes(blockGraph.MajorNodes, Color.red, 0.04f);
-                DrawNodes(blockGraph.MinorNodes, Color.red, 0.02f);
+                DrawLotNodes(LotNodes, Color.red, 0.02f);
             }
         }
 
         private void DrawNodes(List<Node> nodes, Color color, float size)
+        {
+            for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
+            {
+                Gizmos.color = color;
+                Gizmos.DrawSphere(new Vector3(nodes[x].X, nodes[x].Y, 0f), size);
+            }
+        }
+
+        private void DrawLotNodes(List<LotNode> nodes, Color color, float size)
         {
             for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
             {
@@ -136,8 +146,9 @@ namespace Assets.Scripts
             Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
 
             //BLOCK GENERATION
-            LotGenerator blockGen = new LotGenerator(roadGraph, blockGraph);
+            LotGenerator blockGen = new LotGenerator(roadGraph, majorRoadThickness, minorRoadThickness);
             blockGen.Generate();
+            LotNodes = blockGen.LotNodes;
         }
     }
 }

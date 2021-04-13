@@ -24,28 +24,28 @@ public class Node
 
 
     //This function check if in a direction's surroundings (+-60 degrees) , there is any edges already
-    public bool isFree(float dirRad)
+    public bool IsFree(float dirRad)
     {
         foreach(Edge edge in Edges)
         {
             if (edge.NodeA == this)
             {
-                if (Mathf.Abs(edge.dirRadianFromA - dirRad) < (Mathf.PI / 3))
+                if (Mathf.Abs(edge.DirRadianFromA - dirRad) < (Mathf.PI / 3))
                 {
                     return false;
                 }
-                if (dirRad > (2.5f * Mathf.PI / 3) && edge.dirRadianFromA < (-2.5f * Mathf.PI / 3) || dirRad < (-2.5f * Mathf.PI / 3) && edge.dirRadianFromA > (2.5f * Mathf.PI / 3)) //Special case, when the two radians are around PI and -PI
+                if (dirRad > (2.5f * Mathf.PI / 3) && edge.DirRadianFromA < (-2.5f * Mathf.PI / 3) || dirRad < (-2.5f * Mathf.PI / 3) && edge.DirRadianFromA > (2.5f * Mathf.PI / 3)) //Special case, when the two radians are around PI and -PI
                 {
                     return false;
                 }
             }
             else if (edge.NodeB == this)
             {
-                if (Mathf.Abs(edge.dirRadianFromB - dirRad) < (Mathf.PI / 3))
+                if (Mathf.Abs(edge.DirRadianFromB - dirRad) < (Mathf.PI / 3))
                 {
                     return false;
                 }
-                if (dirRad > (2.5f * Mathf.PI / 3) && edge.dirRadianFromB < (-2.5f * Mathf.PI / 3) || dirRad < (-2.5f * Mathf.PI / 3) && edge.dirRadianFromB > (2.5f * Mathf.PI / 3)) //Special case, when the two radians are around PI and -PI
+                if (dirRad > (2.5f * Mathf.PI / 3) && edge.DirRadianFromB < (-2.5f * Mathf.PI / 3) || dirRad < (-2.5f * Mathf.PI / 3) && edge.DirRadianFromB > (2.5f * Mathf.PI / 3)) //Special case, when the two radians are around PI and -PI
                 {
                     return false;
                 }

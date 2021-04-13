@@ -61,6 +61,16 @@ namespace Assets.Scripts
 
         private bool CheckLocalConstrait(RoadSegment segment)
         {
+            foreach (RoadSegment road in segments)
+            {
+                //If the new segment end is close to another segments Node, Fix it's end to it
+                if (IsClose(segment.NodeTo, road.NodeTo))
+                {
+                    segment.NodeTo = road.NodeTo;
+                    segment.EndSegmen = true;
+                }
+            }
+
             if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false; //Check if segment is out of border
 
             if (segment.NodeFrom.X == segment.NodeTo.X && segment.NodeFrom.Y == segment.NodeTo.Y) return false; //Check if segment would come into itself
@@ -69,27 +79,17 @@ namespace Assets.Scripts
 
             if (segment.NodeFrom.Edges.Count >= 4) return false; //nodeFrom has more than 4 edges
 
-            foreach (RoadSegment road in segments)
+            foreach (Edge edge in segment.NodeTo.Edges)
             {
-                //If the new segment end is close to another segments Node, Fix it's end to it
-                if (IsClose(segment.NodeTo, road.NodeTo))
-                {
-                    segment.NodeTo = road.NodeTo;
-                    segment.endSegmen = true;
-                }
-
-                //If the new segment intersect with a street, generate a crossing
-                //Not yet implemented
-
-                //If the new segment is close to intersecting a street, extend it and form a crossing
-                //Not yet implemented
+                if(edge.NodeA == segment.NodeFrom || edge.NodeB == segment.NodeFrom) return false;  //NodeTo already connected to NodeFrom
             }
+
             return true;
         }
 
         private void GlobalGoals(RoadSegment segment)
         {
-            if (segment.endSegmen) return;
+            if (segment.EndSegmen) return;
 
             globalGoalsRoads.Clear();
 
@@ -127,7 +127,7 @@ namespace Assets.Scripts
             //ROAD CONTINUEING
 
             //Then check if we need to determine a new lean. If yes, calculate the next RoadSegment like that
-            if (segment.leanIteration == 3)
+            if (segment.LeanIteration == 3)
             {
                 int randomNumber = rand.Next(0, 3);
                 bool Left = false;
@@ -145,14 +145,14 @@ namespace Assets.Scripts
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(3, maxLean * 2));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), 0);
-                    segment1.leanLeft = true;
+                    segment1.LeanLeft = true;
                     globalGoalsRoads.Add(segment1);
                 }
                 else if (Right == true)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(-3, maxLean * 2));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), 0);
-                    segment1.leanRight = true;
+                    segment1.LeanRight = true;
                     globalGoalsRoads.Add(segment1);
                 }
                 else
@@ -164,23 +164,23 @@ namespace Assets.Scripts
             }
             else //if not, grow the new segment following the lean
             {
-                if (segment.leanLeft == true)
+                if (segment.LeanLeft == true)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(2, maxLean));
-                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.leanIteration + 1);
-                    segment1.leanLeft = true;
+                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.LeanIteration + 1);
+                    segment1.LeanLeft = true;
                     globalGoalsRoads.Add(segment1);
                 }
-                else if (segment.leanRight == true)
+                else if (segment.LeanRight == true)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(-2, -maxLean));
-                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.leanIteration + 1);
-                    segment1.leanRight = true;
+                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.LeanIteration + 1);
+                    segment1.LeanRight = true;
                     globalGoalsRoads.Add(segment1);
                 }
                 else
                 {
-                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.leanIteration + 1);
+                    RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.LeanIteration + 1);
                     globalGoalsRoads.Add(segment1);
                 }
             }
