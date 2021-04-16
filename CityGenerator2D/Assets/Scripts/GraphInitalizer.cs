@@ -10,7 +10,8 @@ namespace Assets.Scripts
     public class GraphInitalizer : MonoBehaviour
     {
         private Graph roadGraph; //Graph which will be built, and then drawn
-        private List<LotNode> LotNodes;
+        private List<LotNode> LotNodes; //Nodes of the Lots
+        private List<Lot> Lots;
         private System.Random rand;
 
         public int maxDegree = 2;
@@ -20,9 +21,10 @@ namespace Assets.Scripts
         public float minorRoadThickness = 0.05f;
         public int mapSize = 20;
         public int seed = 7;
-        public bool drawNodes = false;
-        public bool drawThickRoads = false;
-        public bool drawBlockNodes = false;
+        public bool drawRoadNodes = false;
+        public bool drawRoads = true;
+        public bool drawLotNodes = false;
+        public bool drawLots = true;
 
 
         void Start()
@@ -31,29 +33,6 @@ namespace Assets.Scripts
             roadGraph = new Graph();
             Thread t = new Thread(new ThreadStart(ThreadProc));
             t.Start();
-
-            /*
-            Node A = new Node(-1.0f, 0.0f);
-            Node B = new Node(1.01f, 0.0f);
-
-            Node C = new Node(1.0f, 0.0f);
-            Node D = new Node(3.0f, 0.0f);
-
-            graph.MajorNodes.Add(A);
-            graph.MajorNodes.Add(B);
-            graph.MajorNodes.Add(C);
-            graph.MajorNodes.Add(D);
-
-            graph.MajorEdges.Add(new Edge(A, C));
-            graph.MajorEdges.Add(new Edge(B, D));
-
-            RoadSegment road1 = new RoadSegment(A, C, 0);
-            RoadSegment road2 = new RoadSegment(B, D, 0);
-
-            Debug.Log(road1.IsCrossing(road2));
-            */
-
-
         }
 
         void Update()
@@ -68,25 +47,26 @@ namespace Assets.Scripts
                 return;
             }
 
-            if (drawThickRoads)
+            if (drawRoads)
             {
-                DrawThickEdges(roadGraph.MinorEdges, Color.black, 3);
-                DrawThickEdges(roadGraph.MajorEdges, Color.white, 3);
-                return;
+                DrawEdges(roadGraph.MajorEdges, Color.white);
+                DrawEdges(roadGraph.MinorEdges, Color.black);
             }
 
-            DrawEdges(roadGraph.MajorEdges, Color.white);
-            DrawEdges(roadGraph.MinorEdges, Color.black);
-
-            if (drawNodes)
+            if (drawRoadNodes)
             {
                 DrawNodes(roadGraph.MajorNodes, Color.white, 0.2f);
                 DrawNodes(roadGraph.MinorNodes, Color.black, 0.1f);
             }
 
-            if (drawBlockNodes)
+            if (drawLotNodes)
             {
-                DrawLotNodes(LotNodes, Color.red, 0.02f);
+                DrawLotNodes(LotNodes, Color.red, 0.04f);
+            }
+
+            if (drawLots)
+            {
+                DrawLots(new Color(0.5f, 0.4f, 0.4f));
             }
         }
 
@@ -101,13 +81,41 @@ namespace Assets.Scripts
 
         private void DrawLotNodes(List<LotNode> nodes, Color color, float size)
         {
+            if (LotNodes == null) return;
+
+            Gizmos.color = color;
             for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
             {
-                Gizmos.color = color;
                 Gizmos.DrawSphere(new Vector3(nodes[x].X, nodes[x].Y, 0f), size);
             }
         }
 
+        private void DrawLots(Color color)
+        {
+            if (Lots == null) return;
+
+            Gizmos.color = color;
+            foreach(Lot lot in Lots)
+            {
+                for(int i = 0; i < lot.Nodes.Count; i++)
+                {
+                    if(i == (lot.Nodes.Count - 1))
+                    {
+                        Vector3 from = new Vector3(lot.Nodes[i].X, lot.Nodes[i].Y, 0f);
+                        Vector3 to = new Vector3(lot.Nodes[0].X, lot.Nodes[0].Y, 0f);
+                        Gizmos.DrawLine(from, to);
+                    }
+                    else
+                    {
+                        Vector3 from = new Vector3(lot.Nodes[i].X, lot.Nodes[i].Y, 0f);
+                        Vector3 to = new Vector3(lot.Nodes[i + 1].X, lot.Nodes[i + 1].Y, 0f);
+                        Gizmos.DrawLine(from, to);
+                    }
+                }
+            }
+        }
+
+        //Not used because use too much performance
         private void DrawThickEdges(List<Edge> edges, Color color, int thickness)
         {
             for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
@@ -149,6 +157,7 @@ namespace Assets.Scripts
             LotGenerator blockGen = new LotGenerator(roadGraph, majorRoadThickness, minorRoadThickness);
             blockGen.Generate();
             LotNodes = blockGen.LotNodes;
+            Lots = blockGen.Lots;
         }
     }
 }

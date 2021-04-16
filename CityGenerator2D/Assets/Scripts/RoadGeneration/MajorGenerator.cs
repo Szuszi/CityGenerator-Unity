@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace Assets.Scripts
 {
-
     /**
      *  This class will implement the extended L-system
      */
@@ -196,8 +195,8 @@ namespace Assets.Scripts
             //First Generate a number nearby the middle quarter of the map
             int sampleX = rand.Next(0, (border * 100));
             int sampleY = rand.Next(0, (border * 100));
-            float starterX = ((float)sampleX / 100.0f) - (float)border/2;
-            float starterY = ((float)sampleY / 100.0f) - (float)border/2;
+            float starterX = ((float)sampleX / 100.0f) - (float)border/3;
+            float starterY = ((float)sampleY / 100.0f) - (float)border/3;
             Node startNode = new Node(starterX, starterY);
 
             //Secondly Generate a vector which determines the two starting directions

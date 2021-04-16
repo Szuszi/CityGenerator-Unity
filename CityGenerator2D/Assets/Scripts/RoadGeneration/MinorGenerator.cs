@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEditor;
 
 namespace Assets.Scripts
 {
@@ -80,7 +79,6 @@ namespace Assets.Scripts
        
                 if (segment.IsCrossing(road))
                 {
-                    Debug.Log("Crossing Occured");
                     return false;
                 }
                 
@@ -100,7 +98,6 @@ namespace Assets.Scripts
                     
                     if (segment.IsCrossing(road))
                     {
-                        Debug.Log("Crossing Occured");
                         return false;
                     }
                     
@@ -187,6 +184,7 @@ namespace Assets.Scripts
 
             foreach(Node node in graph.MinorNodes) //Randomly choose nodes to delete, store these nodes and its edges
             {
+                if (node.X > (border - 2) || node.X < (-border + 2) || node.Y > (border - 2) || node.Y < (-border + 2)) continue;
                 if(rand.Next(0,10) == 1)
                 {
                     foreach(Edge edge in node.Edges)
