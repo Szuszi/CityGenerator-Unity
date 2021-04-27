@@ -76,12 +76,6 @@ namespace Assets.Scripts
                     streched = true;
                     break;
                 }
-       
-                if (segment.IsCrossing(road))
-                {
-                    return false;
-                }
-                
             }
 
             if (!streched)
@@ -95,17 +89,21 @@ namespace Assets.Scripts
                         streched = true;
                         break;
                     }
-                    
-                    if (segment.IsCrossing(road))
-                    {
-                        return false;
-                    }
-                    
                 }
             }
 
+            //CHECKING CROSSING
+            foreach (RoadSegment road in hwSegments) //first check majorNodes
+            {
+                if (segment.IsCrossing(road)) return false;
+            }
 
-            //CHECKING CONSTRAITS
+            foreach (RoadSegment road in segments) //then check minorNodes
+            {
+                if (segment.IsCrossing(road)) return false;
+            }
+            
+            //CHECKING OTHER CONSTRAITS
             if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false; //out of border
 
             if (segment.NodeFrom.X == segment.NodeTo.X && segment.NodeFrom.Y == segment.NodeTo.Y) return false; //it comes into itself

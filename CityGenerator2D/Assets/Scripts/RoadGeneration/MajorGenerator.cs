@@ -60,6 +60,7 @@ namespace Assets.Scripts
 
         private bool CheckLocalConstrait(RoadSegment segment)
         {
+            //TRANSFOTMATION
             foreach (RoadSegment road in segments)
             {
                 //If the new segment end is close to another segments Node, Fix it's end to it
@@ -68,6 +69,12 @@ namespace Assets.Scripts
                     segment.NodeTo = road.NodeTo;
                     segment.EndSegmen = true;
                 }
+            }
+
+            //CHECKING CONSTRAITS
+            foreach(RoadSegment road in segments)
+            {
+                if (segment.IsCrossing(road)) return false; //Check if segment is crossing an other road
             }
 
             if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false; //Check if segment is out of border
