@@ -43,7 +43,8 @@ namespace Assets.Scripts
                 else if(node.Edges.Count == 2) TwoEdgedThickening(node, majorRoadThickness);
                 else if(node.Edges.Count == 3) ThreeEdgedThickening(node, majorRoadThickness);
                 else if(node.Edges.Count == 4) FourEdgedThickening(node, majorRoadThickness);
-                else if(node.Edges.Count > 4) throw new ArgumentException("Node has more than four edges", nameof(node)); 
+                else if(node.Edges.Count > 4) throw new ArgumentException("Node has more than four edges", nameof(node));
+                else throw new ArgumentException("Node has no edges", nameof(node));
             }
 
             //Then Thicken minor nodes
@@ -54,6 +55,7 @@ namespace Assets.Scripts
                 else if (node.Edges.Count == 3) ThreeEdgedThickening(node, minorRoadThickness);
                 else if (node.Edges.Count == 4) FourEdgedThickening(node, minorRoadThickness);                
                 else if (node.Edges.Count > 4)  throw new ArgumentException("Node has more than four edges", nameof(node));
+                else throw new ArgumentException("Node has no edges", nameof(node));
             }
         }
 
@@ -64,11 +66,10 @@ namespace Assets.Scripts
             {
                 if(lotNode.Lot == null)
                 {
-                    //Then search for other nodes to connect with and form a lot. Recursive function would be used here
+                    
                     Lot newLot = new Lot();
                     Lots.Add(newLot);
-
-                    FormLot(lotNode, lotNode.Edges[0], newLot, 1);
+                    FormLot(lotNode, lotNode.Edges[0], newLot, 1); //Recursive function that put lotNodes into a Lot object
                 }
             }
         }
@@ -101,7 +102,9 @@ namespace Assets.Scripts
 
 
 
-        //THICKENER FUNCTIONS
+        /**
+         * THICKENER FUNCTIONS
+         */
 
         private void OneEdgedThickening(Node node, float thickness)
         {
@@ -168,11 +171,15 @@ namespace Assets.Scripts
         private void ThreeEdgedThickening(Node node, float thickness)
         {
             if (node.Edges.Count != 3) throw new ArgumentException("Parameter node doesn't have exactly three edges", nameof(node)); //this only work for nodes, which has three edges
+            
+            bool majorWithMinor = false;
 
-            //Calculate
+            //First Calculate
             Edge edge1 = node.Edges[0];
             Edge edge2 = node.Edges[1];
             Edge edge3 = node.Edges[2];
+
+            if (!(graph.MajorEdges.Contains(edge1) && graph.MajorEdges.Contains(edge2) && graph.MajorEdges.Contains(edge3)) && !(graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3))) majorWithMinor = true;
 
             float avarageRad12 = AvarageRadianFromTwoEdges(edge1, edge2, node);
             float avarageRad13 = AvarageRadianFromTwoEdges(edge1, edge3, node);
@@ -195,10 +202,41 @@ namespace Assets.Scripts
                 if (!CorrectThreeEdgedAvarage(avarageRad23, edge1, node)) avarageRad23 += Mathf.PI;
             }
 
-            Vector2 vec12 = new Vector2(Mathf.Cos(avarageRad12) * thickness * (1f / Mathf.Sin(radianDiff12/2)), Mathf.Sin(avarageRad12) * thickness * (1f / Mathf.Sin(radianDiff12/2)));
-            Vector2 vec13 = new Vector2(Mathf.Cos(avarageRad13) * thickness * (1f / Mathf.Sin(radianDiff13/2)), Mathf.Sin(avarageRad13) * thickness * (1f / Mathf.Sin(radianDiff13/2)));
-            Vector2 vec23 = new Vector2(Mathf.Cos(avarageRad23) * thickness * (1f / Mathf.Sin(radianDiff23/2)), Mathf.Sin(avarageRad23) * thickness * (1f / Mathf.Sin(radianDiff23/2)));
+            Vector2 vec12;
+            Vector2 vec13;
+            Vector2 vec23;
 
+            //If one of the crossing is a Major-Minor crossing, make the vectors in a different way.
+            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2)) || (graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge1))) vec12 = MajorMinorCrossingThickening(edge1, edge2, node, radianDiff12);
+            else
+            {
+                
+                if(majorWithMinor && graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2))
+                {
+                    vec12 = new Vector2(Mathf.Cos(avarageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)), Mathf.Sin(avarageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)));
+                }
+                else vec12 = new Vector2(Mathf.Cos(avarageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)), Mathf.Sin(avarageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)));
+            }
+
+            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge3)) || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge1))) vec13 = MajorMinorCrossingThickening(edge1, edge3, node, radianDiff13);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge3))
+                {
+                    vec13 = new Vector2(Mathf.Cos(avarageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)), Mathf.Sin(avarageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)));
+                }
+                else vec13 = new Vector2(Mathf.Cos(avarageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)), Mathf.Sin(avarageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)));
+            }
+
+            if ((graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3)) || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge2))) vec23 = MajorMinorCrossingThickening(edge2, edge3, node, radianDiff23);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3))
+                {
+                    vec23 = new Vector2(Mathf.Cos(avarageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)), Mathf.Sin(avarageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)));
+                }
+                else vec23 = new Vector2(Mathf.Cos(avarageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)), Mathf.Sin(avarageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)));
+            }
 
             //Then store it
             LotNode lotNode12 = new LotNode(node.X + vec12.x, node.Y + vec12.y);
@@ -227,11 +265,16 @@ namespace Assets.Scripts
         {
             if (node.Edges.Count != 4) throw new ArgumentException("Parameter node doesn't have exactly four edges", nameof(node)); //this only work for nodes, which has four edges
 
-            //Calculate-
+            bool majorWithMinor = false;
+
+            //FIRST CALCULATE
             Edge edge1 = node.Edges[0];
             Edge edge2 = node.Edges[1];
             Edge edge3 = node.Edges[2];
             Edge edge4 = node.Edges[3];
+
+            if (!(graph.MajorEdges.Contains(edge1) && graph.MajorEdges.Contains(edge2) && graph.MajorEdges.Contains(edge3) && graph.MajorEdges.Contains(edge4)) && 
+                !(graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge4))) majorWithMinor = true;
 
             //radians from node
             float radian1 = edge1.NodeA == node ? edge1.DirRadianFromA : edge1.DirRadianFromB;
@@ -270,19 +313,54 @@ namespace Assets.Scripts
             if (!CorrectFourEdgedAvarage(avarageRadBase2Common2, baseEdge2, baseEdge1, commonEdge1, node)) avarageRadBase2Common2 += Mathf.PI;
 
             //4 final vectors to use for thickening
-            Vector2 vecB1C1 = new Vector2(Mathf.Cos(avarageRadBase1Common1) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge1, commonEdge1, node) / 2)),
-                                          Mathf.Sin(avarageRadBase1Common1) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge1, commonEdge1, node) / 2)));
+            Vector2 vecB1C1;
+            Vector2 vecB1C2;
+            Vector2 vecB2C1;
+            Vector2 vecB2C2;
 
-            Vector2 vecB1C2 = new Vector2(Mathf.Cos(avarageRadBase1Common2) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge1, commonEdge2, node) / 2)),
-                                          Mathf.Sin(avarageRadBase1Common2) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge1, commonEdge2, node) / 2)));
+            float radianDiffB1C1 = RadianDifferenceFromTwoEdges(baseEdge1, commonEdge1, node);
+            float radianDiffB1C2 = RadianDifferenceFromTwoEdges(baseEdge1, commonEdge2, node);
+            float radianDiffB2C1 = RadianDifferenceFromTwoEdges(baseEdge2, commonEdge1, node);
+            float radianDiffB2C2 = RadianDifferenceFromTwoEdges(baseEdge2, commonEdge2, node);
 
-            Vector2 vecB2C1 = new Vector2(Mathf.Cos(avarageRadBase2Common1) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge2, commonEdge1, node) / 2)),
-                                          Mathf.Sin(avarageRadBase2Common1) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge2, commonEdge1, node) / 2)));
+            //If one of the crossing is a Major-Minor crossing, make the vectors in a different way:
+            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge1)) || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge1)))
+                vecB1C1 = MajorMinorCrossingThickening(baseEdge1, commonEdge1, node, radianDiffB1C1);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge1))
+                     vecB1C1 = new Vector2(Mathf.Cos(avarageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)), Mathf.Sin(avarageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)));            
+                else vecB1C1 = new Vector2(Mathf.Cos(avarageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)), Mathf.Sin(avarageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)));
+            }
 
-            Vector2 vecB2C2 = new Vector2(Mathf.Cos(avarageRadBase2Common2) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge2, commonEdge2, node) / 2)),
-                                          Mathf.Sin(avarageRadBase2Common2) * thickness * (1f / Mathf.Sin(RadianDifferenceFromTwoEdges(baseEdge2, commonEdge2, node) / 2)));
+            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge2)) || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge1)))
+                vecB1C2 = MajorMinorCrossingThickening(baseEdge1, commonEdge2, node, radianDiffB1C2);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge2))
+                     vecB1C2 = new Vector2(Mathf.Cos(avarageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)), Mathf.Sin(avarageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
+                else vecB1C2 = new Vector2(Mathf.Cos(avarageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)), Mathf.Sin(avarageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
+            }
 
-            //Then store it-
+            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge1)) || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge2)))
+                vecB2C1 = MajorMinorCrossingThickening(baseEdge2, commonEdge1, node, radianDiffB2C1);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge1))
+                     vecB2C1 = new Vector2(Mathf.Cos(avarageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)), Mathf.Sin(avarageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
+                else vecB2C1 = new Vector2(Mathf.Cos(avarageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)), Mathf.Sin(avarageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
+            }
+
+            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge2)) || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge2)))
+                vecB2C2 = MajorMinorCrossingThickening(baseEdge2, commonEdge2, node, radianDiffB2C2);
+            else
+            {
+                if (majorWithMinor && graph.MinorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge2))
+                     vecB2C2 = new Vector2(Mathf.Cos(avarageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)), Mathf.Sin(avarageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
+                else vecB2C2 = new Vector2(Mathf.Cos(avarageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)), Mathf.Sin(avarageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
+            }
+
+            //THEN STORE IT
             LotNode lotNodeB1C1 = new LotNode(node.X + vecB1C1.x, node.Y + vecB1C1.y);
             LotNode lotNodeB1C2 = new LotNode(node.X + vecB1C2.x, node.Y + vecB1C2.y);
             LotNode lotNodeB2C1 = new LotNode(node.X + vecB2C1.x, node.Y + vecB2C1.y);
@@ -312,23 +390,19 @@ namespace Assets.Scripts
 
 
 
-        //LOT FORMING
+        /**
+         * LOT FORMING
+         */
 
         //Recursive function, which forms a new Lot from a starting LotNode
         private void FormLot(LotNode node, Edge edgeToSearch, Lot lotToBuild, int iteration)
         {
-            if (node.Lot != null) return;
             if (lotToBuild.Nodes.Contains(node)) return; //We got around
+            if (node.Lot != null) return; //Node already has a Lot
+            if (iteration > 100) return; //Recursive function iteration is too high
 
             lotToBuild.Nodes.Add(node); //First add current node to the Lot
             node.Lot = lotToBuild;
-
-            
-            if (iteration > 100)
-            {
-                return;
-            }
-            
 
             Node nextNode = edgeToSearch.NodeA.LotNodes.Contains(node) ? edgeToSearch.NodeB : edgeToSearch.NodeA;
 
@@ -381,7 +455,10 @@ namespace Assets.Scripts
         }
 
 
-        //HELPER FUNCTIONS
+
+        /**
+         * HELPER FUNCTIONS
+         */
 
         //Returns an avarage radian between two given edge, which has the given common node
         private float AvarageRadianFromTwoEdges(Edge edge1, Edge edge2, Node node)
@@ -399,6 +476,31 @@ namespace Assets.Scripts
 
             if(RadianDifference((dirRad1 + dirRad2) / 2, dirRad2) > RadianDifference(((dirRad1 + dirRad2) / 2) + Mathf.PI, dirRad2)) return ((dirRad1 + dirRad2) / 2 + Mathf.PI);
             return (dirRad1 + dirRad2) / 2;
+        }
+
+        private Vector2 MajorMinorCrossingThickening(Edge edge1, Edge edge2, Node node, float radianDiff)
+        {
+            float dirRad1;
+            float dirRad2;
+
+            if (edge1.NodeA == node) dirRad1 = edge1.DirRadianFromA;
+            else dirRad1 = edge1.DirRadianFromB;
+
+            if (edge2.NodeA == node) dirRad2 = edge2.DirRadianFromA;
+            else dirRad2 = edge2.DirRadianFromB;
+
+            if (graph.MajorEdges.Contains(edge2)) //Edge2 is the MajorEdge
+            {
+                Vector2 edge2vec = new Vector2(Mathf.Cos(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge1vec = new Vector2(Mathf.Cos(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                return edge1vec + edge2vec;
+            }
+            else //Edge1 is the MajorEdge
+            {
+                Vector2 edge1vec = new Vector2(Mathf.Cos(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge2vec = new Vector2(Mathf.Cos(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                return edge1vec + edge2vec;
+            }
         }
 
         //Returns the radian difference between the two given edge, which has the given common node
@@ -450,7 +552,7 @@ namespace Assets.Scripts
         }
 
         //Takes two radiant, returns the true difference
-        public float RadianDifference(float rad1, float rad2)
+        private float RadianDifference(float rad1, float rad2)
         {
             //Convert the radiants between PI and -PI
             while (rad1 < -Mathf.PI) rad1 += Mathf.PI * 2;
@@ -466,7 +568,7 @@ namespace Assets.Scripts
             }
 
             //then check if difference is smaller, if we add 2 * PI to rad2, if yes, return that
-            if ((rad2 + 2 * (float)Math.PI - rad1) < (rad1 - rad2)) return rad2 + 2 * (float)Math.PI - rad1;
+            if ((rad2 + 2 * Mathf.PI - rad1) < (rad1 - rad2)) return rad2 + 2 * Mathf.PI - rad1;
             else return rad1 - rad2;
         }
 
