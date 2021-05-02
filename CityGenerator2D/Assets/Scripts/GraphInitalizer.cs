@@ -14,13 +14,25 @@ namespace Assets.Scripts
         private List<Lot> Lots;
         private System.Random rand;
 
+        [Header("Maximum Curve between Roads")]
+        [Range(2, 20)]
         public int maxDegree = 2;
+        
+        [Header("Maximum Number of Roads")]
         public int maxMajorRoad = 1000;
         public int maxMinorRoad = 10000;
-        public float majorRoadThickness = 0.07f;
-        public float minorRoadThickness = 0.05f;
+
+        [Header("Thickness of Roads")]
+        [Range(0.01f, 0.25f)]
+        public float majorThickness = 0.2f;
+        [Range(0.01f, 0.25f)]
+        public float minorThickness = 0.05f;
+
+        [Header("Seed and Size")]
         public int mapSize = 20;
         public int seed = 7;
+
+        [Header("Gizmos")]
         public bool drawRoadNodes = false;
         public bool drawRoads = true;
         public bool drawLotNodes = false;
@@ -66,7 +78,7 @@ namespace Assets.Scripts
 
             if (drawLots)
             {
-                DrawLots(new Color(0.5f, 0.4f, 0.4f));
+                DrawLots(new Color(0.7f, 0.4f, 0.4f));
             }
         }
 
@@ -115,17 +127,6 @@ namespace Assets.Scripts
             }
         }
 
-        //Not used because use too much performance
-        private void DrawThickEdges(List<Edge> edges, Color color, int thickness)
-        {
-            for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
-            {
-                Vector3 from = new Vector3(edges[x].NodeA.X, edges[x].NodeA.Y, 0f);
-                Vector3 to = new Vector3(edges[x].NodeB.X, edges[x].NodeB.Y, 0f);
-                Handles.DrawBezier(from, to, from, to, color, null, thickness);
-            }
-        }
-
         private void DrawEdges(List<Edge> edges, Color color)
         {
             for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
@@ -149,12 +150,12 @@ namespace Assets.Scripts
 
             //GENERATION TIME, ROAD COUNT
             sw.Stop();
-            Debug.Log("Time taken: " + sw.Elapsed.TotalMilliseconds + "ms");
+            Debug.Log("Road generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
             Debug.Log(majorGen.GetRoadSegments().Count + " major road generated");
             Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
 
             //BLOCK GENERATION
-            LotGenerator blockGen = new LotGenerator(roadGraph, majorRoadThickness, minorRoadThickness);
+            LotGenerator blockGen = new LotGenerator(roadGraph, majorThickness, minorThickness);
             blockGen.Generate();
             LotNodes = blockGen.LotNodes;
             Lots = blockGen.Lots;

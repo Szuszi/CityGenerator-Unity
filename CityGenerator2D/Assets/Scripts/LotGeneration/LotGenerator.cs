@@ -74,17 +74,28 @@ namespace Assets.Scripts
             }
         }
 
-        //Delete Lots which are in the edge of the map
+        //Delete Lots which are in the edge of the map, or not formed correctly
         private void DeleteMapEdgeLots()
         {
             List<Lot> removable = new List<Lot>();
 
             foreach(Lot lot in Lots)
             {
-                Vector2 vec = new Vector2(lot.Nodes[0].X - lot.Nodes[lot.Nodes.Count - 1].X, lot.Nodes[0].Y - lot.Nodes[lot.Nodes.Count - 1].Y); //make a vector from the first and last node of the Lot
-                if (Mathf.Sqrt(Mathf.Pow(vec.x, 2) + Mathf.Pow(vec.y, 2)) > 2){ //Two is used, because a roadsegment's length is 1
-                    removable.Add(lot); 
+                //First Check if the First and Last node has the same edge.
+                bool sameEdgeFound = false;
+                foreach (Edge edge1 in lot.Nodes[0].Edges)
+                {
+                    foreach(Edge edge2 in lot.Nodes[lot.Nodes.Count - 1].Edges)
+                    {
+                        if (edge1 == edge2) sameEdgeFound = true;
+                    }
                 }
+
+                if (!sameEdgeFound) removable.Add(lot);
+
+                //We also remove Lots, which doesn't have at least 3 nodes
+                else if (lot.Nodes.Count <= 2) removable.Add(lot);
+
                 else //There are also Edge Lots which first and last LotNode is in the same Node
                 {
                     Node firstNode = lot.Nodes[0].Edges[0].NodeA.LotNodes.Contains(lot.Nodes[0]) ? lot.Nodes[0].Edges[0].NodeA : lot.Nodes[0].Edges[0].NodeB;

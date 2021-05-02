@@ -58,6 +58,7 @@ namespace Assets.Scripts
             if (segments.Count == maxSegment) Debug.Log("Minor Roads reached maximal amount");
 
             DeleteSomeNodes();
+            DeleteInsideLeaves();
             DeleteAloneEdges();
             DeleteAloneNodes();
         }
@@ -175,6 +176,9 @@ namespace Assets.Scripts
             }
         }
 
+
+        //DELETE FUNCTIONS AT THE END
+
         private void DeleteSomeNodes()
         {
             List<Node> removable = new List<Node>();
@@ -251,6 +255,45 @@ namespace Assets.Scripts
                 graph.MinorNodes.Remove(node);
             }
         }
+
+
+        private void DeleteInsideLeaves()
+        {
+            List<Node> removableNodes = new List<Node>();
+            List<Edge> removableEdges = new List<Edge>();
+
+            foreach (Node node in graph.MinorNodes)
+            {
+                if(node.Edges.Count == 1)
+                {
+                    if (node.X < (border - 2) && node.X > (-border + 2) && node.Y < (border - 2) && node.Y > (-border + 2)) //We only remove leaves which are not in the edge of the map
+                    {
+                        removableNodes.Add(node);
+                        if (!removableEdges.Contains(node.Edges[0])) removableEdges.Add(node.Edges[0]);
+                    }
+                }
+            }
+
+            foreach (Edge edge in removableEdges) //Remove the edges from other nodes and from the minoredges list
+            {
+                foreach (Node node in graph.MinorNodes)
+                {
+                    if (node.Edges.Contains(edge)) node.Edges.Remove(edge);
+                }
+                foreach (Node node in graph.MajorNodes)
+                {
+                    if (node.Edges.Contains(edge)) node.Edges.Remove(edge);
+                }
+                graph.MinorEdges.Remove(edge);
+            }
+
+            foreach (Node node in removableNodes) //Remove the node from the minornodes list
+            {
+                graph.MinorNodes.Remove(node);
+            }
+        }
+
+
 
         private bool IsClose(Node A, Node B)
         {
