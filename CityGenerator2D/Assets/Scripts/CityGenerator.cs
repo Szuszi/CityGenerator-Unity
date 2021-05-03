@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Assets.Scripts
 {
-    public class GraphInitalizer : MonoBehaviour
+    public class CityGenerator : MonoBehaviour
     {
         private Graph roadGraph; //Graph which will be built, and then drawn
         private List<LotNode> LotNodes; //Nodes of the Lots
