@@ -39,6 +39,16 @@ namespace Assets.Scripts
         public bool drawLots = true;
 
 
+        //JUST FOR TESTING, DELETE LATER
+        private List<Lot> ConcaveLots;
+        private List<Lot> ConvexLots;
+        private List<LotMesh> LotMeshes;
+        [Header("Mesh Generation")]
+        public bool drawConvexLots;
+        public bool drawConcaveLots;
+        public bool drawTriangulatedMeshes;
+
+
         void Start()
         {
             rand = new System.Random(seed);
@@ -78,7 +88,21 @@ namespace Assets.Scripts
 
             if (drawLots)
             {
-                DrawLots(new Color(0.7f, 0.4f, 0.4f));
+                DrawLots(Lots, new Color(0.7f, 0.4f, 0.4f));
+            }
+
+            //DELETE AFTER TESTING
+            if (drawConvexLots)
+            {
+                DrawLots(ConvexLots, new Color(0.2f, 0.7f, 0.7f));
+            }
+            if(drawConcaveLots)
+            {
+                DrawLots(ConcaveLots, new Color(0.2f, 0.7f, 0.2f));
+            }
+            if (drawTriangulatedMeshes)
+            {
+                DrawLotMeshes(LotMeshes, new Color(.8f, .8f, .8f));
             }
         }
 
@@ -102,7 +126,7 @@ namespace Assets.Scripts
             }
         }
 
-        private void DrawLots(Color color)
+        private void DrawLots(List<Lot> Lots, Color color)
         {
             if (Lots == null) return;
 
@@ -123,6 +147,22 @@ namespace Assets.Scripts
                         Vector3 to = new Vector3(lot.Nodes[i + 1].X, lot.Nodes[i + 1].Y, 0f);
                         Gizmos.DrawLine(from, to);
                     }
+                }
+            }
+        }
+
+        private void DrawLotMeshes(List<LotMesh> lotMeshes, Color color)
+        {
+            if (lotMeshes == null) return;
+
+            Gizmos.color = color;
+            foreach(LotMesh lotMesh in lotMeshes)
+            {
+                foreach(Triangle tri in lotMesh.triangles)
+                {
+                    Gizmos.DrawLine(tri.A, tri.B);
+                    Gizmos.DrawLine(tri.A, tri.C);
+                    Gizmos.DrawLine(tri.B, tri.C);
                 }
             }
         }
@@ -159,6 +199,14 @@ namespace Assets.Scripts
             blockGen.Generate();
             LotNodes = blockGen.LotNodes;
             Lots = blockGen.Lots;
+
+            //MESH GENERATION
+            MeshGenerator meshGen = new MeshGenerator(Lots, seed);
+            meshGen.GenerateMeshes();
+            //JUST FOR TESTING, DELETE LATER
+            ConvexLots = meshGen.ConvexLots;
+            ConcaveLots = meshGen.ConcaveLots;
+            LotMeshes = meshGen.lotMeshes;
         }
     }
 }

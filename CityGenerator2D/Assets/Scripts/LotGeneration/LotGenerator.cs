@@ -66,10 +66,12 @@ namespace Assets.Scripts
             {
                 if(lotNode.Lot == null)
                 {
-                    
                     Lot newLot = new Lot();
                     Lots.Add(newLot);
-                    FormLot(lotNode, lotNode.Edges[0], newLot, 1); //Recursive function that put lotNodes into a Lot object
+                    if (!FormLot(lotNode, lotNode.Edges[0], newLot, 1))
+                    {
+                        Lots.Remove(newLot); //If the new lot is corrup, remove it!
+                    }
                 }
             }
         }
@@ -405,12 +407,13 @@ namespace Assets.Scripts
          * LOT FORMING
          */
 
-        //Recursive function, which forms a new Lot from a starting LotNode
-        private void FormLot(LotNode node, Edge edgeToSearch, Lot lotToBuild, int iteration)
+        //Recursive function, which forms a new Lot from a starting LotNode. Returns true if forming finished. Returns false if forming failed.
+        private bool FormLot(LotNode node, Edge edgeToSearch, Lot lotToBuild, int iteration)
         {
-            if (lotToBuild.Nodes.Contains(node)) return; //We got around
-            if (node.Lot != null) return; //Node already has a Lot
-            if (iteration > 100) return; //Recursive function iteration is too high
+            if (lotToBuild.Nodes.Contains(node)) return true; //We got around
+
+            if (node.Lot != null) return false; //Node already has a Lot
+            if (iteration > 100) return false; //Recursive function iteration is too high
 
             lotToBuild.Nodes.Add(node); //First add current node to the Lot
             node.Lot = lotToBuild;
@@ -425,13 +428,15 @@ namespace Assets.Scripts
 
                 if (!lotToBuild.Nodes.Contains(otherLotNode))
                 {
-                    FormLot(otherLotNode, edgeToSearch, lotToBuild, iteration + 1); //If it's the first lotnode, go for 2nd node, if it's the second, operate normally
-
-                    return;
+                    if (FormLot(otherLotNode, edgeToSearch, lotToBuild, iteration + 1)) //If it's the first lotnode, go for 2nd node, if it's the second, operate normally
+                    {
+                        return true;
+                    }
+                    else return false; 
                 }
             }
 
-            //First check which is the next LotNode
+            //Check which is the next LotNode
             LotNode nextLotNode = null; 
             int currentLotOrientationToEdge = Orientation(edgeToSearch, node);
             foreach(LotNode lotNode in nextNode.LotNodes)
@@ -442,10 +447,9 @@ namespace Assets.Scripts
                 }
             }
 
-            if(nextLotNode == null)
+            if(nextLotNode == null) //Next LotNode not found, forming failed
             {
-                Debug.Log("Next LotNode not found");
-                return;
+                return false;
             }
 
             Edge nextEdgeToSearch;
@@ -459,10 +463,9 @@ namespace Assets.Scripts
                 nextEdgeToSearch = nextLotNode.Edges[0] == edgeToSearch ? nextLotNode.Edges[1] : nextLotNode.Edges[0];
             }
 
-            //recursive call to this function, returns if we got around, or max iteration reached
-            FormLot(nextLotNode, nextEdgeToSearch, lotToBuild, iteration + 1);
-
-            return;
+            //Recursive call to the next node
+            if (FormLot(nextLotNode, nextEdgeToSearch, lotToBuild, iteration + 1)) return true;
+            else return false;
         }
 
 

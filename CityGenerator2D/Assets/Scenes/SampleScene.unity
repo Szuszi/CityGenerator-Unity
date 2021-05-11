@@ -246,6 +246,8 @@ MonoBehaviour:
   drawRoads: 1
   drawLotNodes: 0
   drawLots: 1
+  drawConvexLots: 0
+  drawConcaveLots: 0
 --- !u!4 &1253295795
 Transform:
   m_ObjectHideFlags: 0
