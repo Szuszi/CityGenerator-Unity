@@ -27,14 +27,8 @@ namespace Assets.Scripts
 
         public void GenerateMeshes()
         {
-            MakeRoadPlane();
             TriangulateLots();
             //Make Lot meshes
-        }
-
-        private void MakeRoadPlane()
-        {
-            //Generate a Black Plane, which has the size of the map
         }
 
         private void TriangulateLots() //Triangulate Lots, and make meshes out of them
@@ -201,7 +195,7 @@ namespace Assets.Scripts
 
                 if(earVertices.Count == 0)
                 {
-                    Debug.Log("earVertices not found! Triangulation failed.");
+                    Debug.Log("earVertices not found, Triangulation failed.");
                     break;
                 }
 

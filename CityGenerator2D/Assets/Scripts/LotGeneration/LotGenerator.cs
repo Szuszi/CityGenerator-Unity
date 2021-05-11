@@ -70,7 +70,7 @@ namespace Assets.Scripts
                     Lots.Add(newLot);
                     if (!FormLot(lotNode, lotNode.Edges[0], newLot, 1))
                     {
-                        Lots.Remove(newLot); //If the new lot is corrup, remove it!
+                        Lots.Remove(newLot); //If the new lot is corrupt, remove it
                     }
                 }
             }

@@ -38,16 +38,19 @@ namespace Assets.Scripts
         public bool drawLotNodes = false;
         public bool drawLots = true;
 
-
-        //JUST FOR TESTING, DELETE LATER
         private List<Lot> ConcaveLots;
         private List<Lot> ConvexLots;
         private List<LotMesh> LotMeshes;
+
         [Header("Mesh Generation")]
         public bool drawConvexLots;
         public bool drawConcaveLots;
         public bool drawTriangulatedMeshes;
 
+        //Event to call, when the generation is ready
+        private bool GenReady = false;
+        private bool GenDone = false;
+        
 
         void Start()
         {
@@ -59,7 +62,11 @@ namespace Assets.Scripts
 
         void Update()
         {
-            //not used
+            if(GenReady && !GenDone) //This make sure, that this will be only called once
+            {
+                GenDone = true;
+                GenerateGameObjects();
+            }
         }
 
         private void OnDrawGizmos()
@@ -91,7 +98,6 @@ namespace Assets.Scripts
                 DrawLots(Lots, new Color(0.7f, 0.4f, 0.4f));
             }
 
-            //DELETE AFTER TESTING
             if (drawConvexLots)
             {
                 DrawLots(ConvexLots, new Color(0.2f, 0.7f, 0.7f));
@@ -203,10 +209,54 @@ namespace Assets.Scripts
             //MESH GENERATION
             MeshGenerator meshGen = new MeshGenerator(Lots, seed);
             meshGen.GenerateMeshes();
-            //JUST FOR TESTING, DELETE LATER
+
             ConvexLots = meshGen.ConvexLots;
             ConcaveLots = meshGen.ConcaveLots;
             LotMeshes = meshGen.lotMeshes;
+
+            GenReady = true;
+        }
+
+        private void GenerateGameObjects()
+        {
+            GameObject Separator = new GameObject();
+            Separator.name = "===========";
+
+            //Make RoadPlane
+            Mesh mesh = new Mesh();
+            GameObject RoadPlane = new GameObject();
+            RoadPlane.name = "RoadPlane";
+            RoadPlane.AddComponent<MeshFilter>();
+            RoadPlane.AddComponent<MeshRenderer>();
+            RoadPlane.GetComponent<MeshFilter>().mesh = GenerateRoadMesh();
+
+            Material RoadMaterial = Resources.Load<Material>("Material/RoadMaterial");
+            RoadPlane.GetComponent<MeshRenderer>().material = RoadMaterial;
+
+            //Make Lots
+        }
+
+        private Mesh GenerateRoadMesh()
+        {
+            Mesh RoadMesh = new Mesh();
+
+            RoadMesh.vertices = new Vector3[]
+            {
+                new Vector3(mapSize, 0, mapSize),
+                new Vector3(-mapSize, 0, mapSize),
+                new Vector3(mapSize, 0, -mapSize),
+                new Vector3(-mapSize, 0, -mapSize)
+            };
+
+            RoadMesh.triangles = new int[]
+            {
+                0, 2, 1,
+                2, 3, 1
+            };
+
+            RoadMesh.RecalculateNormals();
+
+            return RoadMesh;
         }
     }
 }
