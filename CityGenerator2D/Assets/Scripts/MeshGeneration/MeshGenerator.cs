@@ -10,29 +10,31 @@ namespace Assets.Scripts
     class MeshGenerator
     {
         private readonly List<Lot> lots;
-        private int mapSize;
+        private float lotHeight;
 
         public List<Lot> ConvexLots { get; private set; }
         public List<Lot> ConcaveLots { get; private set; }
         public readonly List<LotMesh> lotMeshes;
 
-        public MeshGenerator(List<Lot> lotToTriangulate, int sizeOfMap)
+        public MeshGenerator(List<Lot> lotToTriangulate, float lotDepht)
         {
             lots = lotToTriangulate;
-            mapSize = sizeOfMap;
+            lotHeight = lotDepht;
             ConvexLots = new List<Lot>();
             ConcaveLots = new List<Lot>();
             lotMeshes = new List<LotMesh>();
+
         }
 
         public void GenerateMeshes()
         {
             TriangulateLots();
-            //Make Lot meshes
+            LotSideGeneration();
         }
 
         private void TriangulateLots() //Triangulate Lots, and make meshes out of them
         {
+            //Make LotMeshes
             foreach(Lot lot in lots)
             {
                 if (LotIsConvex(lot))
@@ -44,6 +46,65 @@ namespace Assets.Scripts
                 {
                     ConcaveLots.Add(lot); //For visualization
                     ConcaveTriangulation(lot);
+                }
+            }
+
+            //Make sure the triangles are oriented clockwise
+            foreach (LotMesh lotMesh in lotMeshes)
+            {
+                foreach(Triangle t in lotMesh.triangles)
+                {
+                    if(!IsTriangleOrientedClockwise(t.A, t.B, t.C))
+                    {
+                        Vector3 temp = t.B;
+                        t.B = t.C;
+                        t.C = temp;
+                    }
+                }
+            }
+        }
+
+        private void LotSideGeneration()
+        {
+            foreach(LotMesh lotMesh in lotMeshes)
+            {
+                for(int i = 0; i < lotMesh.lot.Nodes.Count; i++)
+                {
+                    LotNode A;
+                    LotNode B;
+
+                    if(i == lotMesh.lot.Nodes.Count - 1)
+                    {
+                        A = lotMesh.lot.Nodes[i];
+                        B = lotMesh.lot.Nodes[0];
+                    }
+                    else
+                    {
+                        A = lotMesh.lot.Nodes[i];
+                        B = lotMesh.lot.Nodes[i+1];
+                    }
+
+                    Vector3 vecA = new Vector3(A.X, lotHeight, A.Y);
+                    Vector3 vecB = new Vector3(B.X, lotHeight, B.Y);
+                    Vector3 vecAA = new Vector3(A.X, 0.0f, A.Y);
+                    Vector3 vecBB = new Vector3(B.X, 0.0f, B.Y);
+
+                    Triangle tri1;
+                    Triangle tri2;
+
+                    if (IsCounterClockwise(lotMesh.lot))
+                    {
+                        tri1 = new Triangle(vecA, vecBB, vecAA);
+                        tri2 = new Triangle(vecA, vecB, vecBB);
+                    }
+                    else
+                    {
+                        tri1 = new Triangle(vecB, vecAA, vecBB);
+                        tri2 = new Triangle(vecB, vecA, vecAA);
+                    }
+
+                    lotMesh.sideTriangles.Add(tri1);
+                    lotMesh.sideTriangles.Add(tri2);
                 }
             }
         }
@@ -111,7 +172,7 @@ namespace Assets.Scripts
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
         private void ConvexTriangulation(Lot lot)
         {
-            LotMesh convexMesh = new LotMesh();
+            LotMesh convexMesh = new LotMesh(lot);
             
             for (int i = 2; i < lot.Nodes.Count; i++)
             {
@@ -229,7 +290,7 @@ namespace Assets.Scripts
             }
 
             //Step4 insert the triangles inside the LotMesh
-            LotMesh concaveMesh = new LotMesh();
+            LotMesh concaveMesh = new LotMesh(lot);
 
             foreach(Triangle tri in triangles)
             {

@@ -9,11 +9,15 @@ namespace Assets.Scripts
 {
     class LotMesh
     {
-        public readonly List<Triangle> triangles; 
+        public readonly Lot lot;
+        public readonly List<Triangle> triangles;
+        public readonly List<Triangle> sideTriangles;
 
-        public LotMesh () 
+        public LotMesh (Lot lotToUse) 
         {
+            lot = lotToUse;
             triangles = new List<Triangle>();
+            sideTriangles = new List<Triangle>();
         }
 
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c)
