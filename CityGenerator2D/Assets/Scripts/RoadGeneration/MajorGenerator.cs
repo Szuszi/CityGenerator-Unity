@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GraphModel;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace RoadGeneration
 {
     /**
      *  This class will implement the extended L-system
@@ -46,7 +47,7 @@ namespace Assets.Scripts
                 RoadSegment current = Q[0];
                 Q.RemoveAt(0);
 
-                if (!CheckLocalConstrait(current)) continue;
+                if (!CheckLocalConstraint(current)) continue;
                 segments.Add(current);
                 AddToGraph(current);
 
@@ -56,20 +57,20 @@ namespace Assets.Scripts
             if (segments.Count == maxSegment) Debug.Log("Major Roads reached maximal amount");
         }
 
-        private bool CheckLocalConstrait(RoadSegment segment)
+        private bool CheckLocalConstraint(RoadSegment segment)
         {
-            //TRANSFOTMATION
+            //TRANSFORMATION
             foreach (RoadSegment road in segments)
             {
                 //If the new segment end is close to another segments Node, Fix it's end to it
                 if (IsClose(segment.NodeTo, road.NodeTo))
                 {
                     segment.NodeTo = road.NodeTo;
-                    segment.EndSegmen = true;
+                    segment.EndSegment = true;
                 }
             }
 
-            //CHECKING CONSTRAITS
+            //CHECKING CONSTRAINTS
             foreach(RoadSegment road in segments)
             {
                 if (segment.IsCrossing(road)) return false; //Check if segment is crossing an other road
@@ -93,7 +94,7 @@ namespace Assets.Scripts
 
         private void GlobalGoals(RoadSegment segment)
         {
-            if (segment.EndSegmen) return;
+            if (segment.EndSegment) return;
 
             globalGoalsRoads.Clear();
 
@@ -128,31 +129,31 @@ namespace Assets.Scripts
             }
 
 
-            //ROAD CONTINUEING
+            //ROAD CONTINUE
 
             //Then check if we need to determine a new lean. If yes, calculate the next RoadSegment like that
             if (segment.LeanIteration == 3)
             {
                 int randomNumber = rand.Next(0, 3);
-                bool Left = false;
-                bool Right = false;
+                bool left = false;
+                bool right = false;
                 if (randomNumber == 1)
                 {
-                    Left = true;
+                    left = true;
                 }
                 else if (randomNumber == 2)
                 {
-                    Right = true;
+                    right = true;
                 }
 
-                if (Left == true)
+                if (left)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(3, maxLean * 2));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), 0);
                     segment1.LeanLeft = true;
                     globalGoalsRoads.Add(segment1);
                 }
-                else if (Right == true)
+                else if (right)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(-3, maxLean * 2));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), 0);
@@ -168,14 +169,14 @@ namespace Assets.Scripts
             }
             else //if not, grow the new segment following the lean
             {
-                if (segment.LeanLeft == true)
+                if (segment.LeanLeft)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(2, maxLean));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.LeanIteration + 1);
                     segment1.LeanLeft = true;
                     globalGoalsRoads.Add(segment1);
                 }
-                else if (segment.LeanRight == true)
+                else if (segment.LeanRight)
                 {
                     dirVector = RotateVector(dirVector, GetRandomAngle(-2, -maxLean));
                     RoadSegment segment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), segment.LeanIteration + 1);
@@ -200,8 +201,8 @@ namespace Assets.Scripts
             //First Generate a number nearby the middle quarter of the map
             int sampleX = rand.Next(0, (border * 100));
             int sampleY = rand.Next(0, (border * 100));
-            float starterX = ((float)sampleX / 100.0f) - (float)border/3;
-            float starterY = ((float)sampleY / 100.0f) - (float)border/3;
+            float starterX = (sampleX / 100.0f) - (float)border/3;
+            float starterY = (sampleY / 100.0f) - (float)border/3;
             Node startNode = new Node(starterX, starterY);
 
             //Secondly Generate a vector which determines the two starting directions
@@ -230,9 +231,7 @@ namespace Assets.Scripts
             //First we make 'a' smaller, and generate a random number in the range
             if(b < a)
             {
-                int temp = b;
-                b = a;
-                a = temp;
+                (b, a) = (a, b);
             }
             int range = Math.Abs(b - a);
             int rotation = rand.Next(0, range) + a;

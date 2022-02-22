@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using GraphModel;
 
-namespace Assets.Scripts
+namespace LotGeneration
 {
     class LotNode
     {

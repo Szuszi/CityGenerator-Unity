@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using GraphModel;
+using LotGeneration;
+using MeshGeneration;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace Services
 {
     class GizmoService
     {
         public void DrawNodes(List<Node> nodes, Color color, float size)
         {
-            for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
+            for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while being read
             {
                 Gizmos.color = color;
                 Gizmos.DrawSphere(new Vector3(nodes[x].X, nodes[x].Y, 0f), size);
@@ -19,18 +22,18 @@ namespace Assets.Scripts
             if (nodes == null) return;
 
             Gizmos.color = color;
-            for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
+            for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while being read
             {
                 Gizmos.DrawSphere(new Vector3(nodes[x].X, nodes[x].Y, 0f), size);
             }
         }
 
-        public void DrawLots(List<Lot> Lots, Color color)
+        public void DrawLots(List<Lot> lots, Color color)
         {
-            if (Lots == null) return;
+            if (lots == null) return;
 
             Gizmos.color = color;
-            foreach (Lot lot in Lots)
+            foreach (Lot lot in lots)
             {
                 for (int i = 0; i < lot.Nodes.Count; i++)
                 {
@@ -57,7 +60,7 @@ namespace Assets.Scripts
             Gizmos.color = color;
             foreach (LotMesh lotMesh in lotMeshes)
             {
-                foreach (Triangle tri in lotMesh.triangles)
+                foreach (Triangle tri in lotMesh.Triangles)
                 {
                     Gizmos.DrawLine(tri.A, tri.B);
                     Gizmos.DrawLine(tri.A, tri.C);
@@ -68,7 +71,7 @@ namespace Assets.Scripts
 
         public void DrawEdges(List<Edge> edges, Color color)
         {
-            for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while beeing read
+            for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while being read
             {
                 Gizmos.color = color;
                 Vector3 from = new Vector3(edges[x].NodeA.X, edges[x].NodeA.Y, 0f);

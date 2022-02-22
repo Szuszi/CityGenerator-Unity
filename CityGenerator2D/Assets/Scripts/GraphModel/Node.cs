@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
+using LotGeneration;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace GraphModel
 {
     class Node
     {
         public float X { get; private set; }
         public float Y { get; private set; }
 
-        public List<Edge> Edges { get; private set; } //The node knows, which edges includes it -> The Node knows it's neightbours
+        public List<Edge> Edges { get; private set; } //The node knows, which edges includes it -> The Node knows it's neighbours
         public List<LotNode> LotNodes { get; private set; } //The node knows which lotNodes connected to it. The size depends on the number of edges
 
         public Node(float x, float y)

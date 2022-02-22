@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using LotGeneration;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace MeshGeneration
 {
     class MeshGenerator
     {
@@ -10,7 +11,7 @@ namespace Assets.Scripts
 
         public List<Lot> ConvexLots { get; private set; }
         public List<Lot> ConcaveLots { get; private set; }
-        public readonly List<LotMesh> lotMeshes;
+        public readonly List<LotMesh> LotMeshes;
 
         public MeshGenerator(List<Lot> lotToTriangulate, float lotDepht)
         {
@@ -18,7 +19,7 @@ namespace Assets.Scripts
             lotHeight = lotDepht;
             ConvexLots = new List<Lot>();
             ConcaveLots = new List<Lot>();
-            lotMeshes = new List<LotMesh>();
+            LotMeshes = new List<LotMesh>();
 
         }
 
@@ -46,9 +47,9 @@ namespace Assets.Scripts
             }
 
             //Make sure the triangles are oriented clockwise
-            foreach (LotMesh lotMesh in lotMeshes)
+            foreach (LotMesh lotMesh in LotMeshes)
             {
-                foreach(Triangle t in lotMesh.triangles)
+                foreach(Triangle t in lotMesh.Triangles)
                 {
                     if(!IsTriangleOrientedClockwise(t.A, t.B, t.C))
                     {
@@ -62,22 +63,22 @@ namespace Assets.Scripts
 
         private void LotSideGeneration()
         {
-            foreach(LotMesh lotMesh in lotMeshes)
+            foreach(LotMesh lotMesh in LotMeshes)
             {
-                for(int i = 0; i < lotMesh.lot.Nodes.Count; i++)
+                for(int i = 0; i < lotMesh.Lot.Nodes.Count; i++)
                 {
                     LotNode A;
                     LotNode B;
 
-                    if(i == lotMesh.lot.Nodes.Count - 1)
+                    if(i == lotMesh.Lot.Nodes.Count - 1)
                     {
-                        A = lotMesh.lot.Nodes[i];
-                        B = lotMesh.lot.Nodes[0];
+                        A = lotMesh.Lot.Nodes[i];
+                        B = lotMesh.Lot.Nodes[0];
                     }
                     else
                     {
-                        A = lotMesh.lot.Nodes[i];
-                        B = lotMesh.lot.Nodes[i+1];
+                        A = lotMesh.Lot.Nodes[i];
+                        B = lotMesh.Lot.Nodes[i+1];
                     }
 
                     Vector3 vecA = new Vector3(A.X, lotHeight, A.Y);
@@ -88,7 +89,7 @@ namespace Assets.Scripts
                     Triangle tri1;
                     Triangle tri2;
 
-                    if (IsCounterClockwise(lotMesh.lot))
+                    if (IsCounterClockwise(lotMesh.Lot))
                     {
                         tri1 = new Triangle(vecA, vecBB, vecAA);
                         tri2 = new Triangle(vecA, vecB, vecBB);
@@ -99,8 +100,8 @@ namespace Assets.Scripts
                         tri2 = new Triangle(vecB, vecA, vecAA);
                     }
 
-                    lotMesh.sideTriangles.Add(tri1);
-                    lotMesh.sideTriangles.Add(tri2);
+                    lotMesh.SideTriangles.Add(tri1);
+                    lotMesh.SideTriangles.Add(tri2);
                 }
             }
         }
@@ -119,33 +120,33 @@ namespace Assets.Scripts
             // For each set of three adjacent points find the cross product. 
             // If the sign of all the cross products is the same, the angles are all positive or negative (depending on the order in which we visit them) so the polygon is convex.
 
-            bool got_negative = false;
-            bool got_positive = false;
+            bool gotNegative = false;
+            bool gotPositive = false;
 
-            int num_points = lot.Nodes.Count;
+            int numPoints = lot.Nodes.Count;
 
             int B, C;
 
-            for (int A = 0; A < num_points; A++)
+            for (int A = 0; A < numPoints; A++)
             {
-                B = (A + 1) % num_points;
-                C = (B + 1) % num_points;
+                B = (A + 1) % numPoints;
+                C = (B + 1) % numPoints;
 
-                float cross_product = CrossProductLength(
+                float crossProduct = CrossProductLength(
                         lot.Nodes[A].X, lot.Nodes[A].Y,
                         lot.Nodes[B].X, lot.Nodes[B].Y,
                         lot.Nodes[C].X, lot.Nodes[C].Y);
 
-                if (cross_product < 0)
+                if (crossProduct < 0)
                 {
-                    got_negative = true;
+                    gotNegative = true;
                 }
-                else if (cross_product > 0)
+                else if (crossProduct > 0)
                 {
-                    got_positive = true;
+                    gotPositive = true;
                 }
 
-                if (got_negative && got_positive) return false;
+                if (gotNegative && gotPositive) return false;
             }
 
             return true;
@@ -179,7 +180,7 @@ namespace Assets.Scripts
                 convexMesh.AddTriangle(a, b, c);
             }
 
-            lotMeshes.Add(convexMesh);
+            LotMeshes.Add(convexMesh);
         }
 
         //This function is responsible for making a LotMesh from the given concave Lot
@@ -212,16 +213,16 @@ namespace Assets.Scripts
             }
 
             //Find the next and previous vertex
-            vertices[0].prevVertex = vertices[vertices.Count - 1];
-            vertices[0].nextVertex = vertices[1];
+            vertices[0].PrevVertex = vertices[vertices.Count - 1];
+            vertices[0].NextVertex = vertices[1];
 
-            vertices[vertices.Count - 1].prevVertex = vertices[vertices.Count - 2];
-            vertices[vertices.Count - 1].nextVertex = vertices[0];
+            vertices[vertices.Count - 1].PrevVertex = vertices[vertices.Count - 2];
+            vertices[vertices.Count - 1].NextVertex = vertices[0];
 
             for (int i = 1; i < vertices.Count - 1; i++)
             {
-                vertices[i].prevVertex = vertices[i-1];
-                vertices[i].nextVertex = vertices[i+1];
+                vertices[i].PrevVertex = vertices[i-1];
+                vertices[i].NextVertex = vertices[i+1];
             }
 
             //Step 2. Find the reflex (concave) and convex vertices, and ear vertices
@@ -245,7 +246,7 @@ namespace Assets.Scripts
                 if (vertices.Count == 3)
                 {
                     //The final triangle
-                    triangles.Add(new Triangle(vertices[0].position, vertices[0].prevVertex.position, vertices[0].nextVertex.position));
+                    triangles.Add(new Triangle(vertices[0].Position, vertices[0].PrevVertex.Position, vertices[0].NextVertex.Position));
 
                     break;
                 }
@@ -259,10 +260,10 @@ namespace Assets.Scripts
                 //Make a triangle of the first ear
                 Vertex earVertex = earVertices[0];
 
-                Vertex earVertexPrev = earVertex.prevVertex;
-                Vertex earVertexNext = earVertex.nextVertex;
+                Vertex earVertexPrev = earVertex.PrevVertex;
+                Vertex earVertexNext = earVertex.NextVertex;
 
-                Triangle newTriangle = new Triangle(earVertex.position, earVertexPrev.position, earVertexNext.position);
+                Triangle newTriangle = new Triangle(earVertex.Position, earVertexPrev.Position, earVertexNext.Position);
 
                 triangles.Add(newTriangle);
 
@@ -271,8 +272,8 @@ namespace Assets.Scripts
                 vertices.Remove(earVertex);
 
                 //Update the previous vertex and next vertex
-                earVertexPrev.nextVertex = earVertexNext;
-                earVertexNext.prevVertex = earVertexPrev;
+                earVertexPrev.NextVertex = earVertexNext;
+                earVertexNext.PrevVertex = earVertexPrev;
 
                 //...see if we have found a new ear by investigating the two vertices that was part of the ear
                 CheckIfReflexOrConvex(earVertexPrev);
@@ -294,31 +295,31 @@ namespace Assets.Scripts
                 Vector3 B = new Vector3(tri.B.x, tri.B.z, tri.B.y);
                 Vector3 C = new Vector3(tri.C.x, tri.C.z, tri.C.y);
 
-                concaveMesh.triangles.Add(new Triangle(A, B, C));
+                concaveMesh.Triangles.Add(new Triangle(A, B, C));
             }
             
-            lotMeshes.Add(concaveMesh);
+            LotMeshes.Add(concaveMesh);
         }
 
         //Check if a vertex if reflex or convex, and add to appropriate list
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
         private void CheckIfReflexOrConvex(Vertex v)
         {
-            v.isReflex = false;
-            v.isConvex = false;
+            v.IsReflex = false;
+            v.IsConvex = false;
 
             //This is a reflex vertex if its triangle is oriented clockwise
-            Vector2 a = v.prevVertex.GetPos2D_XZ();
+            Vector2 a = v.PrevVertex.GetPos2D_XZ();
             Vector2 b = v.GetPos2D_XZ();
-            Vector2 c = v.nextVertex.GetPos2D_XZ();
+            Vector2 c = v.NextVertex.GetPos2D_XZ();
 
             if (IsTriangleOrientedClockwise(a, b, c))
             {
-                v.isReflex = true;
+                v.IsReflex = true;
             }
             else
             {
-                v.isConvex = true;
+                v.IsConvex = true;
             }
         }
 
@@ -343,22 +344,22 @@ namespace Assets.Scripts
         private void IsVertexEar(Vertex v, List<Vertex> vertices, List<Vertex> earVertices)
         {
             //A reflex vertex cant be an ear!
-            if (v.isReflex)
+            if (v.IsReflex)
             {
                 return;
             }
 
             //This triangle to check point in triangle
-            Vector2 a = v.prevVertex.GetPos2D_XZ();
+            Vector2 a = v.PrevVertex.GetPos2D_XZ();
             Vector2 b = v.GetPos2D_XZ();
-            Vector2 c = v.nextVertex.GetPos2D_XZ();
+            Vector2 c = v.NextVertex.GetPos2D_XZ();
 
             bool hasPointInside = false;
 
             for (int i = 0; i < vertices.Count; i++)
             {
                 //We only need to check if a reflex vertex is inside of the triangle
-                if (vertices[i].isReflex)
+                if (vertices[i].IsReflex)
                 {
                     Vector2 p = vertices[i].GetPos2D_XZ();
 
@@ -410,33 +411,33 @@ namespace Assets.Scripts
                 if(i == lot.Nodes.Count - 1) sum += (lot.Nodes[i].X * lot.Nodes[0].Y - lot.Nodes[i].Y * lot.Nodes[0].X); //Last node reached
                 else sum += (lot.Nodes[i].X * lot.Nodes[i+1].Y - lot.Nodes[i].Y * lot.Nodes[i+1].X);
             }
-            return sum >= 0 ? true : false;
+            return sum >= 0;
         }
 
         //Class is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
         public class Vertex
         {
-            public Vector3 position;
+            public Vector3 Position;
 
             //The previous and next vertex this vertex is attached to
-            public Vertex prevVertex;
-            public Vertex nextVertex;
+            public Vertex PrevVertex;
+            public Vertex NextVertex;
 
             //Properties this vertex may have
             //Reflex is concave
-            public bool isReflex;
-            public bool isConvex;
+            public bool IsReflex;
+            public bool IsConvex;
             //public bool isEar;
 
             public Vertex(Vector3 position)
             {
-                this.position = position;
+                this.Position = position;
             }
 
             //Get 2d pos of this vertex
             public Vector2 GetPos2D_XZ()
             {
-                Vector2 pos_2d_xz = new Vector2(position.x, position.z);
+                Vector2 pos_2d_xz = new Vector2(Position.x, Position.z);
 
                 return pos_2d_xz;
             }

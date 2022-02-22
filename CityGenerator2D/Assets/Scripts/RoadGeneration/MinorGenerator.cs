@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GraphModel;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace RoadGeneration
 {
     /**
      * This L-system is responsible for generating minor roads from a given Highway graph
@@ -22,13 +23,13 @@ namespace Assets.Scripts
 
         private Graph graph;
 
-        public MinorGenerator(System.Random seededRandom, int mapSize, int maxRoad, Graph graphToBuild, List<RoadSegment> MajorSegments)
+        public MinorGenerator(System.Random seededRandom, int mapSize, int maxRoad, Graph graphToBuild, List<RoadSegment> majorSegments)
         {
             globalGoalsRoads = new List<RoadSegment>();
             Q = new List<RoadSegment>();
             segments = new List<RoadSegment>();
 
-            hwSegments = MajorSegments;
+            hwSegments = majorSegments;
 
             rand = seededRandom;
             border = mapSize;
@@ -46,7 +47,7 @@ namespace Assets.Scripts
                 RoadSegment current = Q[0];
                 Q.RemoveAt(0);
 
-                if (!CheckLocalConstrait(current)) continue;
+                if (!CheckLocalConstraint(current)) continue;
                 segments.Add(current);
                 AddToGraph(current);
 
@@ -61,31 +62,31 @@ namespace Assets.Scripts
             DeleteAloneNodes();
         }
 
-        private bool CheckLocalConstrait(RoadSegment segment)
+        private bool CheckLocalConstraint(RoadSegment segment)
         {
             //TRANSFORMATION
-            bool streched = false;
+            bool stretched = false;
 
             foreach (RoadSegment road in hwSegments) //first check majorNodes
             {
-                if (IsClose(segment.NodeTo, road.NodeTo) && !streched)
+                if (IsClose(segment.NodeTo, road.NodeTo) && !stretched)
                 {
                     segment.NodeTo = road.NodeTo;
-                    segment.EndSegmen = true;
-                    streched = true;
+                    segment.EndSegment = true;
+                    stretched = true;
                     break;
                 }
             }
 
-            if (!streched)
+            if (!stretched)
             {
                 foreach (RoadSegment road in segments) //then check minorNodes
                 {
-                    if (IsClose(segment.NodeTo, road.NodeTo) && !streched)
+                    if (IsClose(segment.NodeTo, road.NodeTo) && !stretched)
                     {
                         segment.NodeTo = road.NodeTo;
-                        segment.EndSegmen = true;
-                        streched = true;
+                        segment.EndSegment = true;
+                        stretched = true;
                         break;
                     }
                 }
@@ -102,7 +103,7 @@ namespace Assets.Scripts
                 if (segment.IsCrossing(road)) return false;
             }
             
-            //CHECKING OTHER CONSTRAITS
+            //CHECKING OTHER CONSTRAINTS
             if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false; //out of border
 
             if (segment.NodeFrom.X == segment.NodeTo.X && segment.NodeFrom.Y == segment.NodeTo.Y) return false; //it comes into itself
@@ -120,7 +121,7 @@ namespace Assets.Scripts
 
         private void GlobalGoals(RoadSegment segment)
         {
-            if (segment.EndSegmen) return;
+            if (segment.EndSegment) return;
 
             globalGoalsRoads.Clear();
 
@@ -153,7 +154,7 @@ namespace Assets.Scripts
         {
             foreach(RoadSegment segment in hwSegments)
             {
-                if (segment.EndSegmen) continue;
+                if (segment.EndSegment) continue;
 
                 Vector2 dirVector = new Vector2(segment.NodeTo.X - segment.NodeFrom.X, segment.NodeTo.Y - segment.NodeFrom.Y);
                 Vector2 normalVector1 = new Vector2(dirVector.y, -dirVector.x);
@@ -195,7 +196,7 @@ namespace Assets.Scripts
                 }
             }
 
-            foreach(Edge edge in removableEdges) //Remove the edges from other nodes and from the minoredges list
+            foreach(Edge edge in removableEdges) //Remove the edges from other nodes and from the minorEdges list
             {
                 foreach(Node node in graph.MinorNodes)
                 {
@@ -208,7 +209,7 @@ namespace Assets.Scripts
                 graph.MinorEdges.Remove(edge);
             }
 
-            foreach(Node node in removable) //Remove the node from the minornodes list
+            foreach(Node node in removable) //Remove the node from the minorNodes list
             {
                 graph.MinorNodes.Remove(node);
             }
@@ -272,7 +273,7 @@ namespace Assets.Scripts
                 }
             }
 
-            foreach (Edge edge in removableEdges) //Remove the edges from other nodes and from the minoredges list
+            foreach (Edge edge in removableEdges) //Remove the edges from other nodes and from the minorEdges list
             {
                 foreach (Node node in graph.MinorNodes)
                 {
@@ -285,7 +286,7 @@ namespace Assets.Scripts
                 graph.MinorEdges.Remove(edge);
             }
 
-            foreach (Node node in removableNodes) //Remove the node from the minornodes list
+            foreach (Node node in removableNodes) //Remove the node from the minorNodes list
             {
                 graph.MinorNodes.Remove(node);
             }

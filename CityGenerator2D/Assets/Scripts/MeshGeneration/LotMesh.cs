@@ -1,24 +1,25 @@
 ﻿using System.Collections.Generic;
+using LotGeneration;
 using UnityEngine;
 
-namespace Assets.Scripts
+namespace MeshGeneration
 {
     class LotMesh
     {
-        public readonly Lot lot;
-        public readonly List<Triangle> triangles;
-        public readonly List<Triangle> sideTriangles;
+        public readonly Lot Lot;
+        public readonly List<Triangle> Triangles;
+        public readonly List<Triangle> SideTriangles;
 
         public LotMesh (Lot lotToUse) 
         {
-            lot = lotToUse;
-            triangles = new List<Triangle>();
-            sideTriangles = new List<Triangle>();
+            Lot = lotToUse;
+            Triangles = new List<Triangle>();
+            SideTriangles = new List<Triangle>();
         }
 
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c)
         {
-            triangles.Add(new Triangle(a, b, c));
+            Triangles.Add(new Triangle(a, b, c));
         }
     }
 

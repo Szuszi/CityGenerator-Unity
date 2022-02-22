@@ -1,6 +1,7 @@
 ﻿using System;
+using GraphModel;
 
-namespace Assets.Scripts
+namespace RoadGeneration
 {
     class RoadSegment
     {
@@ -11,7 +12,7 @@ namespace Assets.Scripts
         public bool LeanRight { get; set; }
         public bool LeanLeft { get; set; }
 
-        public bool EndSegmen { get; set; }
+        public bool EndSegment { get; set; }
 
         public RoadSegment(Node from, Node to, int leanNumb)
         {
@@ -21,12 +22,12 @@ namespace Assets.Scripts
 
             LeanLeft = false;
             LeanRight = false;
-            EndSegmen = false;
+            EndSegment = false;
         }
 
         public bool IsCrossing(RoadSegment road) //Check if the given road intersects with this road
         {
-            //if (NodeFrom == road.NodeFrom || NodeFrom == road.NodeTo && NodeTo == road.NodeFrom || NodeTo == road.NodeTo) return true; //Two roadsegment is overlapping each other
+            //if (NodeFrom == road.NodeFrom || NodeFrom == road.NodeTo && NodeTo == road.NodeFrom || NodeTo == road.NodeTo) return true; //Two roadSegment is overlapping each other
             if (NodeFrom == road.NodeFrom || NodeFrom == road.NodeTo || NodeTo == road.NodeFrom || NodeTo == road.NodeTo) return false; //One of the Nodes is the same (it doesnt count as an intersection now)
 
             int o1 = Orientation(NodeFrom, NodeTo, road.NodeTo);
@@ -50,21 +51,21 @@ namespace Assets.Scripts
             return false;
         }
 
-        private int Orientation(Node BaseNode1, Node BaseNode2, Node TestNode) //Oriantation can be calculated with the cross product of two Vectors made from the 3 Nodes
+        private int Orientation(Node baseNode1, Node baseNode2, Node testNode) //Orientation can be calculated with the cross product of two Vectors made from the 3 Nodes
         {
             //float val = (TestNode.Y - BaseNode1.Y) * (BaseNode2.X - TestNode.X) - (TestNode.X - BaseNode1.X) * (BaseNode2.Y - TestNode.Y); //cross product calculation
-            float val = (BaseNode1.Y - TestNode.Y) * (BaseNode2.X - TestNode.X) - (BaseNode1.X - TestNode.X) * (BaseNode2.Y - TestNode.Y); //cross product calculation
+            float val = (baseNode1.Y - testNode.Y) * (baseNode2.X - testNode.X) - (baseNode1.X - testNode.X) * (baseNode2.Y - testNode.Y); //cross product calculation
 
             if (val > 0.00001f) return 1; //clockwise
             if (val < -0.00001f) return -1; //anticlockwise
             else return 0; //collinear
         }
 
-        private bool OnSegment(Node BaseNode1, Node BaseNode2, Node TestNode) //Check if TestNode is between BaseNodes (we only call this if the 3 points are collinear)
+        private bool OnSegment(Node baseNode1, Node baseNode2, Node testNode) //Check if TestNode is between BaseNodes (we only call this if the 3 points are collinear)
         {
-            //If X and Y coordinates are between the BaseNodes X and Y coordinates, then TestNode overlappes
-            if (TestNode.X <= Math.Max(BaseNode1.X, BaseNode2.X) && TestNode.X >= Math.Min(BaseNode1.X, BaseNode2.X) && 
-                TestNode.Y <= Math.Max(BaseNode1.Y, BaseNode2.Y) && TestNode.Y >= Math.Min(BaseNode1.Y, BaseNode2.Y)) return true;
+            //If X and Y coordinates are between the BaseNodes X and Y coordinates, then TestNode overlaps
+            if (testNode.X <= Math.Max(baseNode1.X, baseNode2.X) && testNode.X >= Math.Min(baseNode1.X, baseNode2.X) && 
+                testNode.Y <= Math.Max(baseNode1.Y, baseNode2.Y) && testNode.Y >= Math.Min(baseNode1.Y, baseNode2.Y)) return true;
 
             return false;
         }
