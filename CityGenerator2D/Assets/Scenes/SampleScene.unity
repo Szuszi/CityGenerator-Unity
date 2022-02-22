@@ -309,7 +309,7 @@ GameObject:
   - component: {fileID: 1253295795}
   - component: {fileID: 1253295794}
   m_Layer: 0
-  m_Name: GraphGenerator
+  m_Name: Graph Generator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -327,7 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67321ef99586cd4c8e1ce7185a8383c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDegree: 4
+  maxDegree: 2
   maxMajorRoad: 2000
   maxMinorRoad: 10000
   majorThickness: 0.1
