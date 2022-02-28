@@ -327,7 +327,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67321ef99586cd4c8e1ce7185a8383c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDegree: 2
+  maxDegree: 8
   maxMajorRoad: 2000
   maxMinorRoad: 10000
   majorThickness: 0.1

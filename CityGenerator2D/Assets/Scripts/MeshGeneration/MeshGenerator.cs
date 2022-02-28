@@ -1,95 +1,93 @@
 ﻿using System.Collections.Generic;
-using LotGeneration;
+using BlockGeneration;
 using UnityEngine;
 
 namespace MeshGeneration
 {
     class MeshGenerator
     {
-        private readonly List<Lot> lots;
-        private float lotHeight;
+        private readonly List<Block> blocks;
+        private float blockHeight;
 
-        public List<Lot> ConvexLots { get; private set; }
-        public List<Lot> ConcaveLots { get; private set; }
-        public readonly List<LotMesh> LotMeshes;
+        public List<Block> ConvexBlocks { get; private set; }
+        public List<Block> ConcaveBlocks { get; private set; }
+        public readonly List<BlockMesh> BlockMeshes;
 
-        public MeshGenerator(List<Lot> lotToTriangulate, float lotDepht)
+        public MeshGenerator(List<Block> blockToTriangulate, float blockDepth)
         {
-            lots = lotToTriangulate;
-            lotHeight = lotDepht;
-            ConvexLots = new List<Lot>();
-            ConcaveLots = new List<Lot>();
-            LotMeshes = new List<LotMesh>();
+            blocks = blockToTriangulate;
+            blockHeight = blockDepth;
+            ConvexBlocks = new List<Block>();
+            ConcaveBlocks = new List<Block>();
+            BlockMeshes = new List<BlockMesh>();
 
         }
 
         public void GenerateMeshes()
         {
-            TriangulateLots();
-            LotSideGeneration();
+            TriangulateBlocks();
+            BlockSideGeneration();
         }
 
-        private void TriangulateLots() //Triangulate Lots, and make meshes out of them
+        private void TriangulateBlocks() //Triangulate Blocks, and make meshes out of them
         {
-            //Make LotMeshes
-            foreach(Lot lot in lots)
+            //Make BlockMeshes
+            foreach(Block block in blocks)
             {
-                if (LotIsConvex(lot))
+                if (BlockIsConvex(block))
                 {
-                    ConvexLots.Add(lot); //For visualization
-                    ConvexTriangulation(lot);
+                    ConvexBlocks.Add(block); //For visualization
+                    ConvexTriangulation(block);
                 }
                 else
                 {
-                    ConcaveLots.Add(lot); //For visualization
-                    ConcaveTriangulation(lot);
+                    ConcaveBlocks.Add(block); //For visualization
+                    ConcaveTriangulation(block);
                 }
             }
 
             //Make sure the triangles are oriented clockwise
-            foreach (LotMesh lotMesh in LotMeshes)
+            foreach (BlockMesh blockMesh in BlockMeshes)
             {
-                foreach(Triangle t in lotMesh.Triangles)
+                foreach(Triangle t in blockMesh.Triangles)
                 {
                     if(!IsTriangleOrientedClockwise(t.A, t.B, t.C))
                     {
-                        Vector3 temp = t.B;
-                        t.B = t.C;
-                        t.C = temp;
+                        (t.B, t.C) = (t.C, t.B);
                     }
                 }
             }
         }
 
-        private void LotSideGeneration()
+        private void BlockSideGeneration()
         {
-            foreach(LotMesh lotMesh in LotMeshes)
+            foreach(BlockMesh blockMesh in BlockMeshes)
             {
-                for(int i = 0; i < lotMesh.Lot.Nodes.Count; i++)
+                for(int i = 0; i < blockMesh.Block.Nodes.Count; i++)
                 {
-                    LotNode A;
-                    LotNode B;
+                    BlockNode A;
+                    BlockNode B;
 
-                    if(i == lotMesh.Lot.Nodes.Count - 1)
+                    if(i == blockMesh.Block.Nodes.Count - 1)
                     {
-                        A = lotMesh.Lot.Nodes[i];
-                        B = lotMesh.Lot.Nodes[0];
+                        A = blockMesh.Block.Nodes[i];
+                        B = blockMesh.Block.Nodes[0];
                     }
                     else
                     {
-                        A = lotMesh.Lot.Nodes[i];
-                        B = lotMesh.Lot.Nodes[i+1];
+                        A = blockMesh.Block.Nodes[i];
+                        B = blockMesh.Block.Nodes[i+1];
                     }
 
-                    Vector3 vecA = new Vector3(A.X, lotHeight, A.Y);
-                    Vector3 vecB = new Vector3(B.X, lotHeight, B.Y);
+                    Vector3 vecA = new Vector3(A.X, blockHeight, A.Y);
+                    Vector3 vecB = new Vector3(B.X, blockHeight, B.Y);
                     Vector3 vecAA = new Vector3(A.X, 0.0f, A.Y);
                     Vector3 vecBB = new Vector3(B.X, 0.0f, B.Y);
 
                     Triangle tri1;
                     Triangle tri2;
 
-                    if (IsCounterClockwise(lotMesh.Lot))
+                    if (IsCounterClockwise(blockMesh.Block))
                     {
                         tri1 = new Triangle(vecA, vecBB, vecAA);
                         tri2 = new Triangle(vecA, vecB, vecBB);
@@ -100,8 +98,8 @@ namespace MeshGeneration
                         tri2 = new Triangle(vecB, vecA, vecAA);
                     }
 
-                    lotMesh.SideTriangles.Add(tri1);
-                    lotMesh.SideTriangles.Add(tri2);
+                    blockMesh.SideTriangles.Add(tri1);
+                    blockMesh.SideTriangles.Add(tri2);
                 }
             }
         }
@@ -112,10 +110,10 @@ namespace MeshGeneration
          *  FUNCTION USED FOR TRIANGULATION
          */
 
-        //This function returns if the shape of the Lot is convex or not
-        //IMPORTANT NOTE: Lot has to be non intersected with himself
+        //This function returns if the shape of the Block is convex or not
+        //IMPORTANT NOTE: Block has to be non intersected with himself
         //Method is from the link: http://csharphelper.com/blog/2014/07/determine-whether-a-polygon-is-convex-in-c/
-        private bool LotIsConvex(Lot lot)
+        private bool BlockIsConvex(Block block)
         {
             // For each set of three adjacent points find the cross product. 
             // If the sign of all the cross products is the same, the angles are all positive or negative (depending on the order in which we visit them) so the polygon is convex.
@@ -123,7 +121,7 @@ namespace MeshGeneration
             bool gotNegative = false;
             bool gotPositive = false;
 
-            int numPoints = lot.Nodes.Count;
+            int numPoints = block.Nodes.Count;
 
             int B, C;
 
@@ -133,9 +131,9 @@ namespace MeshGeneration
                 C = (B + 1) % numPoints;
 
                 float crossProduct = CrossProductLength(
-                        lot.Nodes[A].X, lot.Nodes[A].Y,
-                        lot.Nodes[B].X, lot.Nodes[B].Y,
-                        lot.Nodes[C].X, lot.Nodes[C].Y);
+                        block.Nodes[A].X, block.Nodes[A].Y,
+                        block.Nodes[B].X, block.Nodes[B].Y,
+                        block.Nodes[C].X, block.Nodes[C].Y);
 
                 if (crossProduct < 0)
                 {
@@ -165,31 +163,31 @@ namespace MeshGeneration
             return (BAx * BCy - BAy * BCx);
         }
 
-        //This function is responsible for making a LotMesh from the given convex Lot
+        //This function is responsible for making a BlockMesh from the given convex Block
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
-        private void ConvexTriangulation(Lot lot)
+        private void ConvexTriangulation(Block block)
         {
-            LotMesh convexMesh = new LotMesh(lot);
+            BlockMesh convexMesh = new BlockMesh(block);
             
-            for (int i = 2; i < lot.Nodes.Count; i++)
+            for (int i = 2; i < block.Nodes.Count; i++)
             {
-                Vector3 a = new Vector3(lot.Nodes[0].X, lot.Nodes[0].Y, 0); //For gizmos, we make the Vectors like this now, later Y goes to Z (Y is up)
-                Vector3 b = new Vector3(lot.Nodes[i-1].X, lot.Nodes[i-1].Y, 0);
-                Vector3 c = new Vector3(lot.Nodes[i].X, lot.Nodes[i].Y, 0);
+                Vector3 a = new Vector3(block.Nodes[0].X, block.Nodes[0].Y, 0); //For gizmos, we make the Vectors like this now, later Y goes to Z (Y is up)
+                Vector3 b = new Vector3(block.Nodes[i-1].X, block.Nodes[i-1].Y, 0);
+                Vector3 c = new Vector3(block.Nodes[i].X, block.Nodes[i].Y, 0);
 
                 convexMesh.AddTriangle(a, b, c);
             }
 
-            LotMeshes.Add(convexMesh);
+            BlockMeshes.Add(convexMesh);
         }
 
-        //This function is responsible for making a LotMesh from the given concave Lot
+        //This function is responsible for making a BlockMesh from the given concave Block
         //The points on the polygon should be ordered counter-clockwise, Triangulation is made with ear-clipping
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
-        private void ConcaveTriangulation(Lot lot) 
+        private void ConcaveTriangulation(Block block) 
         {
-            //Step 0. Check if the lot stores the vertexes counter clockwise or not
-            bool counterClockwise = IsCounterClockwise(lot);
+            //Step 0. Check if the block stores the vertexes counter clockwise or not
+            bool counterClockwise = IsCounterClockwise(block);
 
             //The list with triangles, that the ear clipping algorithm will generate
             List<Triangle> triangles = new List<Triangle>();
@@ -199,16 +197,16 @@ namespace MeshGeneration
 
             if (counterClockwise)
             {
-                for (int i = 0; i < lot.Nodes.Count; i++)
+                for (int i = 0; i < block.Nodes.Count; i++)
                 {
-                    vertices.Add(new Vertex(new Vector3(lot.Nodes[i].X, 0f, lot.Nodes[i].Y)));
+                    vertices.Add(new Vertex(new Vector3(block.Nodes[i].X, 0f, block.Nodes[i].Y)));
                 }
             }
-            else //The method requires the verex list to be counter-clockwise
+            else //The method requires the vertex list to be counter-clockwise
             {
-                for (int i = lot.Nodes.Count - 1; i > -1 ; i--)
+                for (int i = block.Nodes.Count - 1; i > -1 ; i--)
                 {
-                    vertices.Add(new Vertex(new Vector3(lot.Nodes[i].X, 0f, lot.Nodes[i].Y)));
+                    vertices.Add(new Vertex(new Vector3(block.Nodes[i].X, 0f, block.Nodes[i].Y)));
                 }
             }
 
@@ -286,19 +284,19 @@ namespace MeshGeneration
                 IsVertexEar(earVertexNext, vertices, earVertices);
             }
 
-            //Step4 insert the triangles inside the LotMesh
-            LotMesh concaveMesh = new LotMesh(lot);
+            //Step4 insert the triangles inside the BlockMesh
+            BlockMesh concaveMesh = new BlockMesh(block);
 
             foreach(Triangle tri in triangles)
             {
-                Vector3 A = new Vector3(tri.A.x, tri.A.z, tri.A.y); //We want to draw the lotMeshes as gizmos right now! (up is z right now in the 2d model)
+                Vector3 A = new Vector3(tri.A.x, tri.A.z, tri.A.y); //We want to draw the blockMeshes as gizmos right now! (up is z right now in the 2d model)
                 Vector3 B = new Vector3(tri.B.x, tri.B.z, tri.B.y);
                 Vector3 C = new Vector3(tri.C.x, tri.C.z, tri.C.y);
 
                 concaveMesh.Triangles.Add(new Triangle(A, B, C));
             }
             
-            LotMeshes.Add(concaveMesh);
+            BlockMeshes.Add(concaveMesh);
         }
 
         //Check if a vertex if reflex or convex, and add to appropriate list
@@ -380,7 +378,7 @@ namespace MeshGeneration
         }
 
         //From http://totologic.blogspot.se/2014/01/accurate-point-in-triangle-test.html
-        //p is the testpoint, and the other points are corners in the triangle
+        //p is the test point, and the other points are corners in the triangle
         private bool IsPointInTriangle(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p)
         {
             bool isWithinTriangle = false;
@@ -401,15 +399,15 @@ namespace MeshGeneration
             return isWithinTriangle;
         }
 
-        //returns true if a given lot stores the nodes counter clockwise
+        //returns true if a given block stores the nodes counter clockwise
         //Method is from: https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
-        private bool IsCounterClockwise(Lot lot)
+        private bool IsCounterClockwise(Block block)
         {
             float sum = 0.0f;
-            for(int i = 0; i < lot.Nodes.Count; i++)
+            for(int i = 0; i < block.Nodes.Count; i++)
             {
-                if(i == lot.Nodes.Count - 1) sum += (lot.Nodes[i].X * lot.Nodes[0].Y - lot.Nodes[i].Y * lot.Nodes[0].X); //Last node reached
-                else sum += (lot.Nodes[i].X * lot.Nodes[i+1].Y - lot.Nodes[i].Y * lot.Nodes[i+1].X);
+                if(i == block.Nodes.Count - 1) sum += (block.Nodes[i].X * block.Nodes[0].Y - block.Nodes[i].Y * block.Nodes[0].X); //Last node reached
+                else sum += (block.Nodes[i].X * block.Nodes[i+1].Y - block.Nodes[i].Y * block.Nodes[i+1].X);
             }
             return sum >= 0;
         }

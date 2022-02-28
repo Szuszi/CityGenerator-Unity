@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
-using LotGeneration;
+using BlockGeneration;
 using UnityEngine;
 
 namespace MeshGeneration
 {
-    class LotMesh
+    class BlockMesh
     {
-        public readonly Lot Lot;
+        public readonly Block Block;
         public readonly List<Triangle> Triangles;
         public readonly List<Triangle> SideTriangles;
 
-        public LotMesh (Lot lotToUse) 
+        public BlockMesh (Block blockToUse) 
         {
-            Lot = lotToUse;
+            Block = blockToUse;
             Triangles = new List<Triangle>();
             SideTriangles = new List<Triangle>();
         }

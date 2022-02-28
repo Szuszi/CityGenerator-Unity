@@ -1,18 +1,18 @@
 ﻿using System.Collections.Generic;
 using GraphModel;
 
-namespace LotGeneration
+namespace BlockGeneration
 {
-    class LotNode
+    class BlockNode
     {
         public float X { get; private set; }
         public float Y { get; private set; }
 
         public List<Edge> Edges { get; private set; } //Usually have two, but in special cases, it can be only one
 
-        public Lot Lot { get; set; }
+        public Block Block { get; set; }
 
-        public LotNode(float x, float y)
+        public BlockNode(float x, float y)
         {
             X = x;
             Y = y;

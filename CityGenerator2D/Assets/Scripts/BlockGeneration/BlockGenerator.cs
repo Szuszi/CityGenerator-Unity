@@ -4,22 +4,22 @@ using System.Linq;
 using GraphModel;
 using UnityEngine;
 
-namespace LotGeneration
+namespace BlockGeneration
 {
-    class LotGenerator
+    class BlockGenerator
     {
         private readonly Graph graph;
-        public List<LotNode> LotNodes { get; private set; }
-        public List<Lot> Lots { get; private set; }
+        public List<BlockNode> BlockNodes { get; private set; }
+        public List<Block> Blocks { get; private set; }
 
         private float majorRoadThickness;
         private float minorRoadThickness;
 
-        public LotGenerator(Graph graphToUse, float majorThickness, float minorThickness)
+        public BlockGenerator(Graph graphToUse, float majorThickness, float minorThickness)
         {
             graph = graphToUse;
-            LotNodes = new List<LotNode>();
-            Lots = new List<Lot>();
+            BlockNodes = new List<BlockNode>();
+            Blocks = new List<Block>();
 
             majorRoadThickness = majorThickness;
             minorRoadThickness = minorThickness;
@@ -28,8 +28,8 @@ namespace LotGeneration
         public void Generate()
         {
             ThickenNodes();
-            CreateLots();
-            DeleteMapEdgeLots();
+            CreateBlocks();
+            DeleteMapEdgeBlocks();
         }
 
         //Makes the Nodes thicker, by extending them by the given thickness.
@@ -58,57 +58,57 @@ namespace LotGeneration
             }
         }
 
-        //Connects the LotNodes into one Lot
-        private void CreateLots()
+        //Connects the BlockNodes into one Block
+        private void CreateBlocks()
         {
-            foreach(LotNode lotNode in LotNodes)
+            foreach(BlockNode blockNode in BlockNodes)
             {
-                if(lotNode.Lot == null)
+                if(blockNode.Block == null)
                 {
-                    Lot newLot = new Lot();
-                    Lots.Add(newLot);
-                    if (!FormLot(lotNode, lotNode.Edges[0], newLot, 1))
+                    Block newBlock = new Block();
+                    Blocks.Add(newBlock);
+                    if (!FormBlock(blockNode, blockNode.Edges[0], newBlock, 1))
                     {
-                        Lots.Remove(newLot); //If the new lot is corrupt, remove it
+                        Blocks.Remove(newBlock); //If the new block is corrupt, remove it
                     }
                 }
             }
         }
 
-        //Delete Lots which are in the edge of the map, or not formed correctly
-        private void DeleteMapEdgeLots()
+        //Delete Blocks which are in the edge of the map, or not formed correctly
+        private void DeleteMapEdgeBlocks()
         {
-            List<Lot> removable = new List<Lot>();
+            List<Block> removable = new List<Block>();
 
-            foreach(Lot lot in Lots)
+            foreach(Block block in Blocks)
             {
                 //First Check if the First and Last node has the same edge.
                 bool sameEdgeFound = false;
-                foreach (Edge edge1 in lot.Nodes[0].Edges)
+                foreach (Edge edge1 in block.Nodes[0].Edges)
                 {
-                    foreach(Edge edge2 in lot.Nodes[lot.Nodes.Count - 1].Edges)
+                    foreach(Edge edge2 in block.Nodes[block.Nodes.Count - 1].Edges)
                     {
                         if (edge1 == edge2) sameEdgeFound = true;
                     }
                 }
 
-                if (!sameEdgeFound) removable.Add(lot);
+                if (!sameEdgeFound) removable.Add(block);
 
-                //We also remove Lots, which doesn't have at least 3 nodes
-                else if (lot.Nodes.Count <= 2) removable.Add(lot);
+                //We also remove Blocks, which doesn't have at least 3 nodes
+                else if (block.Nodes.Count <= 2) removable.Add(block);
 
-                else //There are also Edge Lots which first and last LotNode is in the same Node
+                else //There are also Edge Blocks which first and last BlockNode is in the same Node
                 {
-                    Node firstNode = lot.Nodes[0].Edges[0].NodeA.LotNodes.Contains(lot.Nodes[0]) ? lot.Nodes[0].Edges[0].NodeA : lot.Nodes[0].Edges[0].NodeB;
-                    Node lastNode = lot.Nodes[lot.Nodes.Count - 1].Edges[0].NodeA.LotNodes.Contains(lot.Nodes[lot.Nodes.Count - 1]) ? lot.Nodes[lot.Nodes.Count - 1].Edges[0].NodeA : lot.Nodes[lot.Nodes.Count - 1].Edges[0].NodeB;
+                    Node firstNode = block.Nodes[0].Edges[0].NodeA.BlockNodes.Contains(block.Nodes[0]) ? block.Nodes[0].Edges[0].NodeA : block.Nodes[0].Edges[0].NodeB;
+                    Node lastNode = block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA.BlockNodes.Contains(block.Nodes[block.Nodes.Count - 1]) ? block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA : block.Nodes[block.Nodes.Count - 1].Edges[0].NodeB;
 
-                    if (firstNode == lastNode) removable.Add(lot);
+                    if (firstNode == lastNode) removable.Add(block);
                 }
             }
 
-            foreach(Lot lot in removable)
+            foreach(Block block in removable)
             {
-                Lots.Remove(lot);
+                Blocks.Remove(block);
             }
         }
 
@@ -132,17 +132,17 @@ namespace LotGeneration
 
 
             //Then store it
-            LotNode lotNode1 = new LotNode(node.X + leftForward.x, node.Y + leftForward.y);
-            LotNode lotNode2 = new LotNode(node.X + rightForward.x, node.Y + rightForward.y);
+            BlockNode blockNode1 = new BlockNode(node.X + leftForward.x, node.Y + leftForward.y);
+            BlockNode blockNode2 = new BlockNode(node.X + rightForward.x, node.Y + rightForward.y);
 
-            lotNode1.Edges.Add(node.Edges[0]);
-            lotNode2.Edges.Add(node.Edges[0]);
+            blockNode1.Edges.Add(node.Edges[0]);
+            blockNode2.Edges.Add(node.Edges[0]);
 
-            node.LotNodes.Add(lotNode1);
-            node.LotNodes.Add(lotNode2);
+            node.BlockNodes.Add(blockNode1);
+            node.BlockNodes.Add(blockNode2);
 
-            LotNodes.Add(lotNode1);
-            LotNodes.Add(lotNode2);
+            BlockNodes.Add(blockNode1);
+            BlockNodes.Add(blockNode2);
         }
 
         private void TwoEdgedThickening(Node node, float thickness)
@@ -161,19 +161,19 @@ namespace LotGeneration
 
 
             //Then store it
-            LotNode lotNode1 = new LotNode(node.X + vec1.x, node.Y + vec1.y);
-            LotNode lotNode2 = new LotNode(node.X + vec2.x, node.Y + vec2.y);
+            BlockNode blockNode1 = new BlockNode(node.X + vec1.x, node.Y + vec1.y);
+            BlockNode blockNode2 = new BlockNode(node.X + vec2.x, node.Y + vec2.y);
 
-            lotNode1.Edges.Add(node.Edges[0]);
-            lotNode1.Edges.Add(node.Edges[1]);
-            lotNode2.Edges.Add(node.Edges[0]);
-            lotNode2.Edges.Add(node.Edges[1]);
+            blockNode1.Edges.Add(node.Edges[0]);
+            blockNode1.Edges.Add(node.Edges[1]);
+            blockNode2.Edges.Add(node.Edges[0]);
+            blockNode2.Edges.Add(node.Edges[1]);
 
-            node.LotNodes.Add(lotNode1);
-            node.LotNodes.Add(lotNode2);
+            node.BlockNodes.Add(blockNode1);
+            node.BlockNodes.Add(blockNode2);
 
-            LotNodes.Add(lotNode1);
-            LotNodes.Add(lotNode2);
+            BlockNodes.Add(blockNode1);
+            BlockNodes.Add(blockNode2);
         }
 
         private void ThreeEdgedThickening(Node node, float thickness)
@@ -247,24 +247,24 @@ namespace LotGeneration
             }
 
             //Then store it
-            LotNode lotNode12 = new LotNode(node.X + vec12.x, node.Y + vec12.y);
-            LotNode lotNode13 = new LotNode(node.X + vec13.x, node.Y + vec13.y);
-            LotNode lotNode23 = new LotNode(node.X + vec23.x, node.Y + vec23.y);
+            BlockNode blockNode12 = new BlockNode(node.X + vec12.x, node.Y + vec12.y);
+            BlockNode blockNode13 = new BlockNode(node.X + vec13.x, node.Y + vec13.y);
+            BlockNode blockNode23 = new BlockNode(node.X + vec23.x, node.Y + vec23.y);
 
-            lotNode12.Edges.Add(edge1);
-            lotNode12.Edges.Add(edge2);
-            lotNode13.Edges.Add(edge1);
-            lotNode13.Edges.Add(edge3);
-            lotNode23.Edges.Add(edge2);
-            lotNode23.Edges.Add(edge3);
+            blockNode12.Edges.Add(edge1);
+            blockNode12.Edges.Add(edge2);
+            blockNode13.Edges.Add(edge1);
+            blockNode13.Edges.Add(edge3);
+            blockNode23.Edges.Add(edge2);
+            blockNode23.Edges.Add(edge3);
 
-            node.LotNodes.Add(lotNode12);
-            node.LotNodes.Add(lotNode13);
-            node.LotNodes.Add(lotNode23);
+            node.BlockNodes.Add(blockNode12);
+            node.BlockNodes.Add(blockNode13);
+            node.BlockNodes.Add(blockNode23);
 
-            LotNodes.Add(lotNode12);
-            LotNodes.Add(lotNode13);
-            LotNodes.Add(lotNode23);
+            BlockNodes.Add(blockNode12);
+            BlockNodes.Add(blockNode13);
+            BlockNodes.Add(blockNode23);
         }
 
         private void FourEdgedThickening(Node node, float thickness)
@@ -367,59 +367,59 @@ namespace LotGeneration
             }
 
             //THEN STORE IT
-            LotNode lotNodeB1C1 = new LotNode(node.X + vecB1C1.x, node.Y + vecB1C1.y);
-            LotNode lotNodeB1C2 = new LotNode(node.X + vecB1C2.x, node.Y + vecB1C2.y);
-            LotNode lotNodeB2C1 = new LotNode(node.X + vecB2C1.x, node.Y + vecB2C1.y);
-            LotNode lotNodeB2C2 = new LotNode(node.X + vecB2C2.x, node.Y + vecB2C2.y);
+            BlockNode blockNodeB1C1 = new BlockNode(node.X + vecB1C1.x, node.Y + vecB1C1.y);
+            BlockNode blockNodeB1C2 = new BlockNode(node.X + vecB1C2.x, node.Y + vecB1C2.y);
+            BlockNode blockNodeB2C1 = new BlockNode(node.X + vecB2C1.x, node.Y + vecB2C1.y);
+            BlockNode blockNodeB2C2 = new BlockNode(node.X + vecB2C2.x, node.Y + vecB2C2.y);
 
-            lotNodeB1C1.Edges.Add(baseEdge1);
-            lotNodeB1C1.Edges.Add(commonEdge1);
-            lotNodeB1C2.Edges.Add(baseEdge1);
-            lotNodeB1C2.Edges.Add(commonEdge2);
-            lotNodeB2C1.Edges.Add(baseEdge2);
-            lotNodeB2C1.Edges.Add(commonEdge1);
-            lotNodeB2C2.Edges.Add(baseEdge2);
-            lotNodeB2C2.Edges.Add(commonEdge2);
+            blockNodeB1C1.Edges.Add(baseEdge1);
+            blockNodeB1C1.Edges.Add(commonEdge1);
+            blockNodeB1C2.Edges.Add(baseEdge1);
+            blockNodeB1C2.Edges.Add(commonEdge2);
+            blockNodeB2C1.Edges.Add(baseEdge2);
+            blockNodeB2C1.Edges.Add(commonEdge1);
+            blockNodeB2C2.Edges.Add(baseEdge2);
+            blockNodeB2C2.Edges.Add(commonEdge2);
 
-            node.LotNodes.Add(lotNodeB1C1);
-            node.LotNodes.Add(lotNodeB1C2);
-            node.LotNodes.Add(lotNodeB2C1);
-            node.LotNodes.Add(lotNodeB2C2);
+            node.BlockNodes.Add(blockNodeB1C1);
+            node.BlockNodes.Add(blockNodeB1C2);
+            node.BlockNodes.Add(blockNodeB2C1);
+            node.BlockNodes.Add(blockNodeB2C2);
 
-            LotNodes.Add(lotNodeB1C1);
-            LotNodes.Add(lotNodeB1C2);
-            LotNodes.Add(lotNodeB2C1);
-            LotNodes.Add(lotNodeB2C2);
+            BlockNodes.Add(blockNodeB1C1);
+            BlockNodes.Add(blockNodeB1C2);
+            BlockNodes.Add(blockNodeB2C1);
+            BlockNodes.Add(blockNodeB2C2);
         }
 
 
 
         /**
-         * LOT FORMING
+         * BLOCK FORMING
          */
 
-        //Recursive function, which forms a new Lot from a starting LotNode. Returns true if forming finished. Returns false if forming failed.
-        private bool FormLot(LotNode node, Edge edgeToSearch, Lot lotToBuild, int iteration)
+        //Recursive function, which forms a new Block from a starting BlockNode. Returns true if forming finished. Returns false if forming failed.
+        private bool FormBlock(BlockNode node, Edge edgeToSearch, Block blockToBuild, int iteration)
         {
-            if (lotToBuild.Nodes.Contains(node)) return true; //We got around
+            if (blockToBuild.Nodes.Contains(node)) return true; //We got around
 
-            if (node.Lot != null) return false; //Node already has a Lot
+            if (node.Block != null) return false; //Node already has a Block
             if (iteration > 100) return false; //Recursive function iteration is too high
 
-            lotToBuild.Nodes.Add(node); //First add current node to the Lot
-            node.Lot = lotToBuild;
+            blockToBuild.Nodes.Add(node); //First add current node to the Block
+            node.Block = blockToBuild;
 
-            Node nextNode = edgeToSearch.NodeA.LotNodes.Contains(node) ? edgeToSearch.NodeB : edgeToSearch.NodeA;
+            Node nextNode = edgeToSearch.NodeA.BlockNodes.Contains(node) ? edgeToSearch.NodeB : edgeToSearch.NodeA;
 
             //Special case: One edged node
             if(node.Edges.Count == 1)
             {
-                Node currentNode = edgeToSearch.NodeA.LotNodes.Contains(node) ? edgeToSearch.NodeA : edgeToSearch.NodeB;
-                LotNode otherLotNode = currentNode.LotNodes[0] == node ? currentNode.LotNodes[1] : currentNode.LotNodes[0];
+                Node currentNode = edgeToSearch.NodeA.BlockNodes.Contains(node) ? edgeToSearch.NodeA : edgeToSearch.NodeB;
+                BlockNode otherBlockNode = currentNode.BlockNodes[0] == node ? currentNode.BlockNodes[1] : currentNode.BlockNodes[0];
 
-                if (!lotToBuild.Nodes.Contains(otherLotNode))
+                if (!blockToBuild.Nodes.Contains(otherBlockNode))
                 {
-                    if (FormLot(otherLotNode, edgeToSearch, lotToBuild, iteration + 1)) //If it's the first lotNode, go for 2nd node, if it's the second, operate normally
+                    if (FormBlock(otherBlockNode, edgeToSearch, blockToBuild, iteration + 1)) //If it's the first blockNode, go for 2nd node, if it's the second, operate normally
                     {
                         return true;
                     }
@@ -427,35 +427,35 @@ namespace LotGeneration
                 }
             }
 
-            //Check which is the next LotNode
-            LotNode nextLotNode = null; 
-            int currentLotOrientationToEdge = Orientation(edgeToSearch, node);
-            foreach(LotNode lotNode in nextNode.LotNodes)
+            //Check which is the next blockNode
+            BlockNode nextBlockNode = null; 
+            int currentBlockOrientationToEdge = Orientation(edgeToSearch, node);
+            foreach(BlockNode blockNode in nextNode.BlockNodes)
             {
-                if (lotNode.Edges.Contains(edgeToSearch))
+                if (blockNode.Edges.Contains(edgeToSearch))
                 {
-                    if (Orientation(edgeToSearch, lotNode) == currentLotOrientationToEdge) nextLotNode = lotNode;
+                    if (Orientation(edgeToSearch, blockNode) == currentBlockOrientationToEdge) nextBlockNode = blockNode;
                 }
             }
 
-            if(nextLotNode == null) //Next LotNode not found, forming failed
+            if(nextBlockNode == null) //Next BlockNode not found, forming failed
             {
                 return false;
             }
 
             Edge nextEdgeToSearch;
 
-            if (nextLotNode.Edges.Count == 1) //Special case: One edged node
+            if (nextBlockNode.Edges.Count == 1) //Special case: One edged node
             {
                 nextEdgeToSearch = edgeToSearch;
             }
             else
             {
-                nextEdgeToSearch = nextLotNode.Edges[0] == edgeToSearch ? nextLotNode.Edges[1] : nextLotNode.Edges[0];
+                nextEdgeToSearch = nextBlockNode.Edges[0] == edgeToSearch ? nextBlockNode.Edges[1] : nextBlockNode.Edges[0];
             }
 
             //Recursive call to the next node
-            if (FormLot(nextLotNode, nextEdgeToSearch, lotToBuild, iteration + 1)) return true;
+            if (FormBlock(nextBlockNode, nextEdgeToSearch, blockToBuild, iteration + 1)) return true;
             else return false;
         }
 
@@ -575,8 +575,8 @@ namespace LotGeneration
             else return rad1 - rad2;
         }
 
-        //This function checks the orientation of a LotNode compared to and edge
-        private int Orientation(Edge baseEdge, LotNode testNode) 
+        //This function checks the orientation of a BlockNode compared to and edge
+        private int Orientation(Edge baseEdge, BlockNode testNode) 
         {
             //Orientation can be calculated with the cross product of two Vectors made from the 3 Nodes
             float val = (baseEdge.NodeA.Y - testNode.Y) * (baseEdge.NodeB.X - testNode.X) - (baseEdge.NodeA.X - testNode.X) * (baseEdge.NodeB.Y - testNode.Y);
@@ -585,8 +585,8 @@ namespace LotGeneration
             if (val < -0.00001f) return -1; //anticlockwise
             else
             {
-                Debug.Log("LotNode Collinear to it's Edge");
-                return 0; //collinear, shouldn't really happen with LotNodes that uses this edge
+                Debug.Log("BlockNode Collinear to it's Edge");
+                return 0; //collinear, shouldn't really happen with BlockNodes that uses this edge
             }
         }
     }

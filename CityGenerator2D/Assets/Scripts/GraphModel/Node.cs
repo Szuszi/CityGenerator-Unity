@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using LotGeneration;
+using BlockGeneration;
 using UnityEngine;
 
 namespace GraphModel
@@ -10,7 +10,7 @@ namespace GraphModel
         public float Y { get; private set; }
 
         public List<Edge> Edges { get; private set; } //The node knows, which edges includes it -> The Node knows it's neighbours
-        public List<LotNode> LotNodes { get; private set; } //The node knows which lotNodes connected to it. The size depends on the number of edges
+        public List<BlockNode> BlockNodes { get; private set; } //The node knows which blockNodes connected to it. The size depends on the number of edges
 
         public Node(float x, float y)
         {
@@ -18,7 +18,7 @@ namespace GraphModel
             Y = y;
 
             Edges = new List<Edge>();
-            LotNodes = new List<LotNode>();
+            BlockNodes = new List<BlockNode>();
         }
 
         public void AddEdge(Edge edge)

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using BlockGeneration;
 using GraphModel;
-using LotGeneration;
 using MeshGeneration;
 using RoadGeneration;
 using Services;
@@ -10,17 +10,17 @@ using UnityEngine;
 public class CityGenerator : MonoBehaviour
 {
     private Graph roadGraph; //Graph which will be built, and then drawn
-    private List<LotNode> lotNodes; //Nodes of the Lots
-    private List<Lot> lots;
+    private List<BlockNode> blockNodes; //Nodes of the Blocks
+    private List<Block> blocks;
     private System.Random rand;
 
     private GizmoService gizmoService; //For drawing with gizmos
     private MeshCreateService meshCreator;
 
-    private List<Lot> concaveLots;
-    private List<Lot> convexLots;
-    private List<LotMesh> lotMeshes;
-    private float lotHeight = 0.02f;
+    private List<Block> concaveBlocks;
+    private List<Block> convexBlocks;
+    private List<BlockMesh> blockMeshes;
+    private float blockHeight = 0.02f;
 
     [Header("Maximum Curve between Roads")]
     [Range(2, 20)]
@@ -41,19 +41,19 @@ public class CityGenerator : MonoBehaviour
     public int seed = 7;
 
     [Header("Gizmos")]
-    public bool drawRoadNodes = false;
+    public bool drawRoadNodes;
     public bool drawRoads = true;
-    public bool drawLotNodes = false;
-    public bool drawLots = true;
+    public bool drawBlockNodes;
+    public bool drawBlocks = true;
 
     [Header("Mesh Generation")]
-    public bool drawConvexLots;
-    public bool drawConcaveLots;
+    public bool drawConvexBlocks;
+    public bool drawConcaveBlocks;
     public bool drawTriangulatedMeshes;
 
     //Event to call, when the generation is ready
-    private bool genReady = false;
-    private bool genDone = false;
+    private bool genReady;
+    private bool genDone;
         
 
     void Start()
@@ -64,7 +64,7 @@ public class CityGenerator : MonoBehaviour
         gizmoService = new GizmoService();
         meshCreator = new MeshCreateService();
 
-        Thread t = new Thread(new ThreadStart(ThreadProc));
+        Thread t = new Thread(ThreadProc);
         t.Start();
     }
 
@@ -94,18 +94,18 @@ public class CityGenerator : MonoBehaviour
         Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
 
         //BLOCK GENERATION
-        LotGenerator blockGen = new LotGenerator(roadGraph, majorThickness, minorThickness);
+        BlockGenerator blockGen = new BlockGenerator(roadGraph, majorThickness, minorThickness);
         blockGen.Generate();
-        lotNodes = blockGen.LotNodes;
-        lots = blockGen.Lots;
+        blockNodes = blockGen.BlockNodes;
+        blocks = blockGen.Blocks;
 
         //MESH GENERATION
-        MeshGenerator meshGen = new MeshGenerator(lots, lotHeight);
+        MeshGenerator meshGen = new MeshGenerator(blocks, blockHeight);
         meshGen.GenerateMeshes();
 
-        convexLots = meshGen.ConvexLots;
-        concaveLots = meshGen.ConcaveLots;
-        lotMeshes = meshGen.LotMeshes;
+        convexBlocks = meshGen.ConvexBlocks;
+        concaveBlocks = meshGen.ConcaveBlocks;
+        blockMeshes = meshGen.BlockMeshes;
 
         genReady = true;
     }
@@ -125,24 +125,24 @@ public class CityGenerator : MonoBehaviour
         Material roadMaterial = Resources.Load<Material>("Material/RoadMaterial");
         roadPlane.GetComponent<MeshRenderer>().material = roadMaterial;
 
-        //Make Lots
-        GameObject lotContainer = new GameObject();
-        lotContainer.name = "Lot Container";
+        //Make Blocks
+        GameObject blockContainer = new GameObject();
+        blockContainer.name = "Block Container";
 
-        Material lotMaterial = Resources.Load<Material>("Material/LotMaterial");
-        Material lotGreenMaterial = Resources.Load<Material>("Material/LotGreenMaterial");
+        Material blockMaterial = Resources.Load<Material>("Material/BlockMaterial");
+        Material blockGreenMaterial = Resources.Load<Material>("Material/BlockGreenMaterial");
 
-        for (int i = 0; i < lotMeshes.Count; i++)
+        for (int i = 0; i < blockMeshes.Count; i++)
         {
-            GameObject lot = new GameObject();
-            lot.name = "Lot" + i.ToString();
-            lot.transform.parent = lotContainer.transform;
-            lot.AddComponent<MeshFilter>();
-            lot.AddComponent<MeshRenderer>();
-            lot.GetComponent<MeshFilter>().mesh = meshCreator.GenerateLotMesh(lotMeshes[i], lotHeight);
+            GameObject block = new GameObject();
+            block.name = "Block" + i.ToString();
+            block.transform.parent = blockContainer.transform;
+            block.AddComponent<MeshFilter>();
+            block.AddComponent<MeshRenderer>();
+            block.GetComponent<MeshFilter>().mesh = meshCreator.GenerateBlockMesh(blockMeshes[i], blockHeight);
 
-            if (lotMeshes[i].Lot.Nodes.Count > 10) lot.GetComponent<MeshRenderer>().material = lotGreenMaterial;
-            else lot.GetComponent<MeshRenderer>().material = lotMaterial;
+            if (blockMeshes[i].Block.Nodes.Count > 10) block.GetComponent<MeshRenderer>().material = blockGreenMaterial;
+            else block.GetComponent<MeshRenderer>().material = blockMaterial;
         }
 
     }
@@ -166,27 +166,27 @@ public class CityGenerator : MonoBehaviour
             gizmoService.DrawNodes(roadGraph.MinorNodes, Color.black, 0.1f);
         }
 
-        if (drawLotNodes)
+        if (drawBlockNodes)
         {
-            gizmoService.DrawLotNodes(lotNodes, Color.red, 0.04f);
+            gizmoService.DrawBlockNodes(blockNodes, Color.red, 0.04f);
         }
 
-        if (drawLots)
+        if (drawBlocks)
         {
-            gizmoService.DrawLots(lots, new Color(0.7f, 0.4f, 0.4f));
+            gizmoService.DrawBlocks(blocks, new Color(0.7f, 0.4f, 0.4f));
         }
 
-        if (drawConvexLots)
+        if (drawConvexBlocks)
         {
-            gizmoService.DrawLots(convexLots, new Color(0.2f, 0.7f, 0.7f));
+            gizmoService.DrawBlocks(convexBlocks, new Color(0.2f, 0.7f, 0.7f));
         }
-        if (drawConcaveLots)
+        if (drawConcaveBlocks)
         {
-            gizmoService.DrawLots(concaveLots, new Color(0.2f, 0.7f, 0.2f));
+            gizmoService.DrawBlocks(concaveBlocks, new Color(0.2f, 0.7f, 0.2f));
         }
         if (drawTriangulatedMeshes)
         {
-            gizmoService.DrawLotMeshes(lotMeshes, new Color(.8f, .8f, .8f));
+            gizmoService.DrawBlockMeshes(blockMeshes, new Color(.8f, .8f, .8f));
         }
     }
 }

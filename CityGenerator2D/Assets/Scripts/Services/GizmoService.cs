@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
+using BlockGeneration;
 using GraphModel;
-using LotGeneration;
 using MeshGeneration;
 using UnityEngine;
 
@@ -17,7 +17,7 @@ namespace Services
             }
         }
 
-        public void DrawLotNodes(List<LotNode> nodes, Color color, float size)
+        public void DrawBlockNodes(List<BlockNode> nodes, Color color, float size)
         {
             if (nodes == null) return;
 
@@ -28,39 +28,39 @@ namespace Services
             }
         }
 
-        public void DrawLots(List<Lot> lots, Color color)
+        public void DrawBlocks(List<Block> blocks, Color color)
         {
-            if (lots == null) return;
+            if (blocks == null) return;
 
             Gizmos.color = color;
-            foreach (Lot lot in lots)
+            foreach (Block block in blocks)
             {
-                for (int i = 0; i < lot.Nodes.Count; i++)
+                for (int i = 0; i < block.Nodes.Count; i++)
                 {
-                    if (i == (lot.Nodes.Count - 1))
+                    if (i == (block.Nodes.Count - 1))
                     {
-                        Vector3 from = new Vector3(lot.Nodes[i].X, lot.Nodes[i].Y, 0f);
-                        Vector3 to = new Vector3(lot.Nodes[0].X, lot.Nodes[0].Y, 0f);
+                        Vector3 from = new Vector3(block.Nodes[i].X, block.Nodes[i].Y, 0f);
+                        Vector3 to = new Vector3(block.Nodes[0].X, block.Nodes[0].Y, 0f);
                         Gizmos.DrawLine(from, to);
                     }
                     else
                     {
-                        Vector3 from = new Vector3(lot.Nodes[i].X, lot.Nodes[i].Y, 0f);
-                        Vector3 to = new Vector3(lot.Nodes[i + 1].X, lot.Nodes[i + 1].Y, 0f);
+                        Vector3 from = new Vector3(block.Nodes[i].X, block.Nodes[i].Y, 0f);
+                        Vector3 to = new Vector3(block.Nodes[i + 1].X, block.Nodes[i + 1].Y, 0f);
                         Gizmos.DrawLine(from, to);
                     }
                 }
             }
         }
 
-        public void DrawLotMeshes(List<LotMesh> lotMeshes, Color color)
+        public void DrawBlockMeshes(List<BlockMesh> blockMeshes, Color color)
         {
-            if (lotMeshes == null) return;
+            if (blockMeshes == null) return;
 
             Gizmos.color = color;
-            foreach (LotMesh lotMesh in lotMeshes)
+            foreach (BlockMesh blockMesh in blockMeshes)
             {
-                foreach (Triangle tri in lotMesh.Triangles)
+                foreach (Triangle tri in blockMesh.Triangles)
                 {
                     Gizmos.DrawLine(tri.A, tri.B);
                     Gizmos.DrawLine(tri.A, tri.C);
