@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using GraphModel;
 using UnityEngine;
 
@@ -12,21 +11,23 @@ namespace RoadGeneration
 
     class MinorGenerator
     {
-        private List<RoadSegment> globalGoalsRoads;
-        private List<RoadSegment> Q;
-        private List<RoadSegment> segments;
-        private List<RoadSegment> hwSegments;
+        private readonly List<RoadSegment> globalGoalsRoads;
+        private readonly List<RoadSegment> queue;
+        private readonly List<RoadSegment> segments;
+        private readonly List<RoadSegment> hwSegments;
 
-        private System.Random rand;
-        private int border;
-        private int maxSegment;
+        private readonly System.Random rand;
+        private readonly int border;
+        private readonly int maxSegment;
 
-        private Graph graph;
+        private readonly Graph graph;
+        
+        private const int RoadLength = 10;
 
         public MinorGenerator(System.Random seededRandom, int mapSize, int maxRoad, Graph graphToBuild, List<RoadSegment> majorSegments)
         {
             globalGoalsRoads = new List<RoadSegment>();
-            Q = new List<RoadSegment>();
+            queue = new List<RoadSegment>();
             segments = new List<RoadSegment>();
 
             hwSegments = majorSegments;
@@ -42,10 +43,10 @@ namespace RoadGeneration
         {
             GenerateStartSegments();
 
-            while (Q.Count() != 0 && segments.Count() < maxSegment)
+            while (queue.Count != 0 && segments.Count < maxSegment)
             {
-                RoadSegment current = Q[0];
-                Q.RemoveAt(0);
+                RoadSegment current = queue[0];
+                queue.RemoveAt(0);
 
                 if (!CheckLocalConstraint(current)) continue;
                 segments.Add(current);
@@ -69,7 +70,7 @@ namespace RoadGeneration
 
             foreach (RoadSegment road in hwSegments) //first check majorNodes
             {
-                if (IsClose(segment.NodeTo, road.NodeTo) && !stretched)
+                if (IsClose(segment.NodeTo, road.NodeTo))
                 {
                     segment.NodeTo = road.NodeTo;
                     segment.EndSegment = true;
@@ -82,11 +83,10 @@ namespace RoadGeneration
             {
                 foreach (RoadSegment road in segments) //then check minorNodes
                 {
-                    if (IsClose(segment.NodeTo, road.NodeTo) && !stretched)
+                    if (IsClose(segment.NodeTo, road.NodeTo))
                     {
                         segment.NodeTo = road.NodeTo;
                         segment.EndSegment = true;
-                        stretched = true;
                         break;
                     }
                 }
@@ -104,17 +104,23 @@ namespace RoadGeneration
             }
             
             //CHECKING OTHER CONSTRAINTS
-            if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false; //out of border
+            //Check if segment is out of border
+            if (segment.NodeFrom.X > border || segment.NodeFrom.X < -border 
+             || segment.NodeFrom.Y > border || segment.NodeFrom.Y < -border) return false;
 
-            if (segment.NodeFrom.X == segment.NodeTo.X && segment.NodeFrom.Y == segment.NodeTo.Y) return false; //it comes into itself
+            //Check if segment would come into itself
+            if (segment.NodeFrom.X == segment.NodeTo.X && segment.NodeFrom.Y == segment.NodeTo.Y) return false;
 
-            if (segment.NodeTo.Edges.Count >= 4) return false; //nodeTo has more than 4 edges
+            //nodeTo or nodeFrom has more than 4 edges
+            if (segment.NodeTo.Edges.Count >= 4 || segment.NodeFrom.Edges.Count >= 4) return false;
 
-            if (segment.NodeFrom.Edges.Count >= 4) return false; //nodeFrom has more than 4 edges
+            if (!segment.NodeFrom.IsFree(
+            Mathf.Atan2(segment.NodeTo.Y - segment.NodeFrom.Y, segment.NodeTo.X - segment.NodeFrom.X)
+            )) return false;  //direction is not free from NodeFrom
 
-            if (!segment.NodeFrom.IsFree(Mathf.Atan2(segment.NodeTo.Y - segment.NodeFrom.Y, segment.NodeTo.X - segment.NodeFrom.X))) return false;  //direction is not free from NodeFrom
-
-            if (!segment.NodeTo.IsFree(Mathf.Atan2(segment.NodeFrom.Y - segment.NodeTo.Y, segment.NodeFrom.X - segment.NodeTo.X))) return false;  //direction is not free from NodeTo
+            if (!segment.NodeTo.IsFree(
+            Mathf.Atan2(segment.NodeFrom.Y - segment.NodeTo.Y, segment.NodeFrom.X - segment.NodeTo.X)
+            )) return false;  //direction is not free from NodeTo
 
             return true;
         }
@@ -126,20 +132,20 @@ namespace RoadGeneration
             globalGoalsRoads.Clear();
 
             //Generate in the 3 other possible direction
-            Vector2 dirVector = new Vector2(segment.NodeTo.X - segment.NodeFrom.X, segment.NodeTo.Y - segment.NodeFrom.Y);
-            Vector2 normalVector1 = new Vector2(dirVector.y, -dirVector.x);
-            Vector2 normalVector2 = new Vector2(-dirVector.y, dirVector.x);
+            var dirVector = segment.getDirVector();
+            var normalVector1 = new Vector2(dirVector.y, -dirVector.x);
+            var normalVector2 = new Vector2(-dirVector.y, dirVector.x);
 
-            RoadSegment branchedSegment1 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + dirVector.normalized.x, segment.NodeTo.Y + dirVector.normalized.y), 0);
-            RoadSegment branchedSegment2 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + normalVector1.normalized.x, segment.NodeTo.Y + normalVector1.normalized.y), 0);
-            RoadSegment branchedSegment3 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + normalVector2.normalized.x, segment.NodeTo.Y + normalVector2.normalized.y), 0);
+            RoadSegment branchedSegment1 = CalcNewRoadSegment(segment.NodeTo, dirVector, 0);
+            RoadSegment branchedSegment2 = CalcNewRoadSegment(segment.NodeTo, normalVector1, 0);
+            RoadSegment branchedSegment3 = CalcNewRoadSegment(segment.NodeTo, normalVector2, 0);
             globalGoalsRoads.Add(branchedSegment1);
             globalGoalsRoads.Add(branchedSegment2);
             globalGoalsRoads.Add(branchedSegment3);
 
             foreach (RoadSegment newSegment in globalGoalsRoads)
             {
-                Q.Add(newSegment);
+                queue.Add(newSegment);
             }
         }
 
@@ -156,21 +162,21 @@ namespace RoadGeneration
             {
                 if (segment.EndSegment) continue;
 
-                Vector2 dirVector = new Vector2(segment.NodeTo.X - segment.NodeFrom.X, segment.NodeTo.Y - segment.NodeFrom.Y);
-                Vector2 normalVector1 = new Vector2(dirVector.y, -dirVector.x);
-                Vector2 normalVector2 = new Vector2(-dirVector.y, dirVector.x);
+                var dirVector = segment.getDirVector();
+                var normalVector1 = new Vector2(dirVector.y, -dirVector.x);
+                var normalVector2 = new Vector2(-dirVector.y, dirVector.x);
 
-                RoadSegment branchedSegment2 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + normalVector1.normalized.x, segment.NodeTo.Y + normalVector1.normalized.y), 0);
-                RoadSegment branchedSegment3 = new RoadSegment(segment.NodeTo, new Node(segment.NodeTo.X + normalVector2.normalized.x, segment.NodeTo.Y + normalVector2.normalized.y), 0);
-                Q.Add(branchedSegment2);
-                Q.Add(branchedSegment3);
+                RoadSegment branchedSegment2 = CalcNewRoadSegment(segment.NodeTo, normalVector1, 0);
+                RoadSegment branchedSegment3 = CalcNewRoadSegment(segment.NodeTo, normalVector2, 0);
+                queue.Add(branchedSegment2);
+                queue.Add(branchedSegment3);
 
                 if (hwSegments.IndexOf(segment) == 0) //We also branch out from the very first Node!
                 {
-                    RoadSegment branchedSegment4 = new RoadSegment(segment.NodeFrom, new Node(segment.NodeFrom.X + normalVector1.normalized.x, segment.NodeFrom.Y + normalVector1.normalized.y), 0);
-                    RoadSegment branchedSegment5 = new RoadSegment(segment.NodeFrom, new Node(segment.NodeFrom.X + normalVector2.normalized.x, segment.NodeFrom.Y + normalVector2.normalized.y), 0);
-                    Q.Add(branchedSegment4);
-                    Q.Add(branchedSegment5);
+                    RoadSegment branchedSegment4 = CalcNewRoadSegment(segment.NodeFrom, normalVector1, 0);
+                    RoadSegment branchedSegment5 = CalcNewRoadSegment(segment.NodeFrom, normalVector2, 0);
+                    queue.Add(branchedSegment4);
+                    queue.Add(branchedSegment5);
                 }
             }
         }
@@ -263,13 +269,10 @@ namespace RoadGeneration
 
             foreach (Node node in graph.MinorNodes)
             {
-                if(node.Edges.Count == 1)
+                if (node.Edges.Count == 1 && node.X < (border - 2) && node.X > (-border + 2) && node.Y < (border - 2) && node.Y > (-border + 2)) //We only remove leaves which are not in the edge of the map
                 {
-                    if (node.X < (border - 2) && node.X > (-border + 2) && node.Y < (border - 2) && node.Y > (-border + 2)) //We only remove leaves which are not in the edge of the map
-                    {
-                        removableNodes.Add(node);
-                        if (!removableEdges.Contains(node.Edges[0])) removableEdges.Add(node.Edges[0]);
-                    }
+                    removableNodes.Add(node);
+                    if (!removableEdges.Contains(node.Edges[0])) removableEdges.Add(node.Edges[0]);
                 }
             }
 
@@ -296,8 +299,16 @@ namespace RoadGeneration
 
         private bool IsClose(Node A, Node B)
         {
-            if (((float)Math.Pow(A.X - B.X, 2) + (float)Math.Pow(A.Y - B.Y, 2)) < (0.7f * 0.7f)) return true; //The two points are closer than 0.7f
+            float idealRadius = RoadLength * 0.7f;
+            //If the two points are closer than the ideal radius
+            if (((float)Math.Pow(A.X - B.X, 2) + (float)Math.Pow(A.Y - B.Y, 2)) < (idealRadius * idealRadius)) return true;
             return false;
+        }
+        
+        private RoadSegment CalcNewRoadSegment(Node nodeFrom, Vector2 dirVector, int leanIteration)
+        {
+            var newNodeTo = new Node(nodeFrom.X + dirVector.normalized.x * RoadLength, nodeFrom.Y + dirVector.normalized.y * RoadLength);
+            return new RoadSegment(nodeFrom, newNodeTo, leanIteration);
         }
 
         public List<RoadSegment> GetRoadSegments()

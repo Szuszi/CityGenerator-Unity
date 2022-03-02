@@ -23,7 +23,7 @@ public class CityGenerator : MonoBehaviour
     private float blockHeight = 0.02f;
 
     [Header("Maximum Curve between Roads")]
-    [Range(2, 20)]
+    [Range(0, 20)]
     public int maxDegree = 2;
         
     [Header("Maximum Number of Roads")]
@@ -31,13 +31,13 @@ public class CityGenerator : MonoBehaviour
     public int maxMinorRoad = 10000;
 
     [Header("Thickness of Roads")]
-    [Range(0.01f, 0.25f)]
-    public float majorThickness = 0.2f;
-    [Range(0.01f, 0.25f)]
-    public float minorThickness = 0.05f;
+    [Range(0.1f, 2.5f)]
+    public float majorThickness = 2.0f;
+    [Range(0.1f, 2.5f)]
+    public float minorThickness = 0.5f;
 
     [Header("Seed and Size")]
-    public int mapSize = 20;
+    public int mapSize = 200;
     public int seed = 7;
 
     [Header("Gizmos")]
@@ -162,13 +162,13 @@ public class CityGenerator : MonoBehaviour
 
         if (drawRoadNodes)
         {
-            gizmoService.DrawNodes(roadGraph.MajorNodes, Color.white, 0.2f);
-            gizmoService.DrawNodes(roadGraph.MinorNodes, Color.black, 0.1f);
+            gizmoService.DrawNodes(roadGraph.MajorNodes, Color.white, 2f);
+            gizmoService.DrawNodes(roadGraph.MinorNodes, Color.black, 1f);
         }
 
         if (drawBlockNodes)
         {
-            gizmoService.DrawBlockNodes(blockNodes, Color.red, 0.04f);
+            gizmoService.DrawBlockNodes(blockNodes, Color.red, 0.4f);
         }
 
         if (drawBlocks)
