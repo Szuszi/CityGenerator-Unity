@@ -8,7 +8,7 @@ namespace Services
 {
     class GizmoService
     {
-        public void DrawNodes(List<Node> nodes, Color color, float size)
+        public static void DrawNodes(List<Node> nodes, Color color, float size)
         {
             for (int x = nodes.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while being read
             {
@@ -17,7 +17,7 @@ namespace Services
             }
         }
 
-        public void DrawBlockNodes(List<BlockNode> nodes, Color color, float size)
+        public static void DrawBlockNodes(List<BlockNode> nodes, Color color, float size)
         {
             if (nodes == null) return;
 
@@ -28,7 +28,7 @@ namespace Services
             }
         }
 
-        public void DrawBlocks(List<Block> blocks, Color color)
+        public static void DrawBlocks(List<Block> blocks, Color color)
         {
             if (blocks == null) return;
 
@@ -53,7 +53,7 @@ namespace Services
             }
         }
 
-        public void DrawBlockMeshes(List<BlockMesh> blockMeshes, Color color)
+        public static void DrawBlockMeshes(List<BlockMesh> blockMeshes, Color color)
         {
             if (blockMeshes == null) return;
 
@@ -69,8 +69,10 @@ namespace Services
             }
         }
 
-        public void DrawEdges(List<Edge> edges, Color color)
+        public static void DrawEdges(List<Edge> edges, Color color)
         {
+            if (edges == null || edges.Count == 0) return;
+            
             for (int x = edges.Count - 1; x > -1; x--) //for loop start from backwards, because the list is getting new elements while being read
             {
                 Gizmos.color = color;

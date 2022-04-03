@@ -4,6 +4,7 @@ using BlockGeneration;
 using GraphModel;
 using MeshGeneration;
 using RoadGeneration;
+using BlockDivision;
 using Services;
 using UnityEngine;
 
@@ -12,20 +13,20 @@ public class CityGenerator : MonoBehaviour
     private Graph roadGraph; //Graph which will be built, and then drawn
     private List<BlockNode> blockNodes; //Nodes of the Blocks
     private List<Block> blocks;
+    private List<Block> lots;
     private System.Random rand;
-
-    private GizmoService gizmoService; //For drawing with gizmos
-    private MeshCreateService meshCreator;
 
     private List<Block> concaveBlocks;
     private List<Block> convexBlocks;
     private List<BlockMesh> blockMeshes;
+    private List<BoundingRectangle> boundingRectangles;
     private float blockHeight = 0.02f;
 
     [Header("Maximum Curve between Roads")]
     [Range(0, 20)]
     public int maxDegree = 2;
         
+    [Header("Maximum Number of Roads")]
     [Header("Maximum Number of Roads")]
     public int maxMajorRoad = 1000;
     public int maxMinorRoad = 10000;
@@ -51,6 +52,10 @@ public class CityGenerator : MonoBehaviour
     public bool drawConcaveBlocks;
     public bool drawTriangulatedMeshes;
 
+    [Header("Block subdivision")] 
+    public bool drawBoundingBoxes;
+    public bool drawLots;
+
     //Event to call, when the generation is ready
     private bool genReady;
     private bool genDone;
@@ -60,9 +65,6 @@ public class CityGenerator : MonoBehaviour
     {
         rand = new System.Random(seed);
         roadGraph = new Graph();
-
-        gizmoService = new GizmoService();
-        meshCreator = new MeshCreateService();
 
         Thread t = new Thread(ThreadProc);
         t.Start();
@@ -98,6 +100,13 @@ public class CityGenerator : MonoBehaviour
         blockGen.Generate();
         blockNodes = blockGen.BlockNodes;
         blocks = blockGen.Blocks;
+        Debug.Log(blockGen.Blocks.Count + " block generated");
+        
+        //BLOCK DIVISION
+        BlockDivider blockDiv = new BlockDivider(rand, blocks);
+        blockDiv.DivideBlocks();
+        boundingRectangles = blockDiv.BoundingRectangles;
+        lots = blockDiv.Lots;
 
         //MESH GENERATION
         MeshGenerator meshGen = new MeshGenerator(blocks, blockHeight);
@@ -120,7 +129,7 @@ public class CityGenerator : MonoBehaviour
         roadPlane.name = "Road Plane";
         roadPlane.AddComponent<MeshFilter>();
         roadPlane.AddComponent<MeshRenderer>();
-        roadPlane.GetComponent<MeshFilter>().mesh = meshCreator.GenerateRoadMesh(mapSize);
+        roadPlane.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateRoadMesh(mapSize);
 
         Material roadMaterial = Resources.Load<Material>("Material/RoadMaterial");
         roadPlane.GetComponent<MeshRenderer>().material = roadMaterial;
@@ -139,7 +148,7 @@ public class CityGenerator : MonoBehaviour
             block.transform.parent = blockContainer.transform;
             block.AddComponent<MeshFilter>();
             block.AddComponent<MeshRenderer>();
-            block.GetComponent<MeshFilter>().mesh = meshCreator.GenerateBlockMesh(blockMeshes[i], blockHeight);
+            block.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(blockMeshes[i], blockHeight);
 
             if (blockMeshes[i].Block.Nodes.Count > 10) block.GetComponent<MeshRenderer>().material = blockGreenMaterial;
             else block.GetComponent<MeshRenderer>().material = blockMaterial;
@@ -156,37 +165,55 @@ public class CityGenerator : MonoBehaviour
 
         if (drawRoads)
         {
-            gizmoService.DrawEdges(roadGraph.MajorEdges, Color.white);
-            gizmoService.DrawEdges(roadGraph.MinorEdges, Color.black);
+            GizmoService.DrawEdges(roadGraph.MajorEdges, Color.white);
+            GizmoService.DrawEdges(roadGraph.MinorEdges, Color.black);
         }
 
         if (drawRoadNodes)
         {
-            gizmoService.DrawNodes(roadGraph.MajorNodes, Color.white, 2f);
-            gizmoService.DrawNodes(roadGraph.MinorNodes, Color.black, 1f);
+            GizmoService.DrawNodes(roadGraph.MajorNodes, Color.white, 2f);
+            GizmoService.DrawNodes(roadGraph.MinorNodes, Color.black, 1f);
         }
 
         if (drawBlockNodes)
         {
-            gizmoService.DrawBlockNodes(blockNodes, Color.red, 0.4f);
+            GizmoService.DrawBlockNodes(blockNodes, Color.red, 0.4f);
         }
 
         if (drawBlocks)
         {
-            gizmoService.DrawBlocks(blocks, new Color(0.7f, 0.4f, 0.4f));
+            GizmoService.DrawBlocks(blocks, new Color(0.7f, 0.4f, 0.4f));
         }
 
-        if (drawConvexBlocks)
+        if (drawConvexBlocks && genDone)
         {
-            gizmoService.DrawBlocks(convexBlocks, new Color(0.2f, 0.7f, 0.7f));
+            GizmoService.DrawBlocks(convexBlocks, new Color(0.2f, 0.7f, 0.7f));
         }
-        if (drawConcaveBlocks)
+        if (drawConcaveBlocks && genDone)
         {
-            gizmoService.DrawBlocks(concaveBlocks, new Color(0.2f, 0.7f, 0.2f));
+            GizmoService.DrawBlocks(concaveBlocks, new Color(0.2f, 0.7f, 0.2f));
         }
-        if (drawTriangulatedMeshes)
+        if (drawTriangulatedMeshes && genDone)
         {
-            gizmoService.DrawBlockMeshes(blockMeshes, new Color(.8f, .8f, .8f));
+            GizmoService.DrawBlockMeshes(blockMeshes, new Color(.8f, .8f, .8f));
+        }
+
+        if (drawBoundingBoxes && genDone)
+        {
+            List<Edge> cutEdges = new List<Edge>();
+            
+            foreach (var boundingBox in boundingRectangles)
+            {
+                GizmoService.DrawEdges(boundingBox.Edges, Color.white);   
+                cutEdges.Add(boundingBox.GetCutEdge());
+            }
+            
+            GizmoService.DrawEdges(cutEdges, Color.yellow);
+        }
+
+        if (drawLots && genDone)
+        {
+            GizmoService.DrawBlocks(lots, new Color(0.2f, 0.7f, 0.7f));
         }
     }
 }

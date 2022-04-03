@@ -5,7 +5,7 @@ namespace Services
 {
     class MeshCreateService
     {
-        public Mesh GenerateRoadMesh(int mapSize)
+        public static Mesh GenerateRoadMesh(int mapSize)
         {
             Mesh roadMesh = new Mesh();
 
@@ -28,7 +28,7 @@ namespace Services
             return roadMesh;
         }
 
-        public Mesh GenerateBlockMesh(BlockMesh block, float blockHeight)
+        public static Mesh GenerateBlockMesh(BlockMesh block, float blockHeight)
         {
             Mesh lMesh = new Mesh();
 

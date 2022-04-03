@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BlockGeneration;
 using UnityEngine;
 
@@ -61,6 +62,11 @@ namespace GraphModel
                 }
             }
             return true;
+        }
+
+        public float getDistance(Node otherNode)
+        {
+            return (float) Math.Sqrt((Math.Pow(X - otherNode.X, 2) + Math.Pow(Y - otherNode.Y, 2)));
         }
     }
 }

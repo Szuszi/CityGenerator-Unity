@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using GraphModel;
 
 namespace BlockGeneration
@@ -18,6 +19,16 @@ namespace BlockGeneration
             Y = y;
 
             Edges = new List<Edge>();
+        }
+
+        public Node GetNodeForm()
+        {
+            return new Node(X, Y);
+        }
+
+        public bool Equals(BlockNode otherNode)
+        {
+            return Math.Abs(X - otherNode.X) < 0.0001f && Math.Abs(Y - otherNode.Y) < 0.0001f;
         }
     }
 }
