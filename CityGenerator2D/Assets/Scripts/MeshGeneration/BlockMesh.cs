@@ -9,12 +9,14 @@ namespace MeshGeneration
         public readonly Block Block;
         public readonly List<Triangle> Triangles;
         public readonly List<Triangle> SideTriangles;
+        public readonly float Height;
 
-        public BlockMesh (Block blockToUse) 
+        public BlockMesh (Block blockToUse, float blockHeight) 
         {
             Block = blockToUse;
             Triangles = new List<Triangle>();
             SideTriangles = new List<Triangle>();
+            Height = blockHeight;
         }
 
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c)

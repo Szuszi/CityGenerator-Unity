@@ -65,6 +65,7 @@ public class CityGenerator : MonoBehaviour
     {
         rand = new System.Random(seed);
         roadGraph = new Graph();
+        lots = new List<Block>();
 
         Thread t = new Thread(ThreadProc);
         t.Start();
@@ -103,14 +104,13 @@ public class CityGenerator : MonoBehaviour
         Debug.Log(blockGen.Blocks.Count + " block generated");
         
         //BLOCK DIVISION
-        BlockDivider blockDiv = new BlockDivider(rand, blocks);
+        BlockDivider blockDiv = new BlockDivider(rand, blocks, lots);
         blockDiv.DivideBlocks();
         boundingRectangles = blockDiv.BoundingRectangles;
-        lots = blockDiv.Lots;
 
         //MESH GENERATION
-        MeshGenerator meshGen = new MeshGenerator(blocks, blockHeight);
-        meshGen.GenerateMeshes();
+        MeshGenerator meshGen = new MeshGenerator(lots, blockHeight, rand);
+        meshGen.GenerateLotMeshes();
 
         convexBlocks = meshGen.ConvexBlocks;
         concaveBlocks = meshGen.ConcaveBlocks;
@@ -148,7 +148,7 @@ public class CityGenerator : MonoBehaviour
             block.transform.parent = blockContainer.transform;
             block.AddComponent<MeshFilter>();
             block.AddComponent<MeshRenderer>();
-            block.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(blockMeshes[i], blockHeight);
+            block.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(blockMeshes[i]);
 
             if (blockMeshes[i].Block.Nodes.Count > 10) block.GetComponent<MeshRenderer>().material = blockGreenMaterial;
             else block.GetComponent<MeshRenderer>().material = blockMaterial;
@@ -211,7 +211,7 @@ public class CityGenerator : MonoBehaviour
             GizmoService.DrawEdges(cutEdges, Color.yellow);
         }
 
-        if (drawLots && genDone)
+        if (drawLots)
         {
             GizmoService.DrawBlocks(lots, new Color(0.2f, 0.7f, 0.7f));
         }

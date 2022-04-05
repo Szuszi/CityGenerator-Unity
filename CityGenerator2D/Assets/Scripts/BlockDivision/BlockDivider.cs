@@ -14,10 +14,10 @@ namespace BlockDivision
         
         public List<Block> Lots { get; set; }
 
-        public BlockDivider(System.Random seededRandom, List<Block> blocksToDivide)
+        public BlockDivider(System.Random seededRandom, List<Block> blocksToDivide, List<Block> lots)
         {
             blocks = blocksToDivide;
-            Lots = new List<Block>();
+            Lots = lots;
             BoundingRectangles = new List<BoundingRectangle>();
             rand = seededRandom;
         }
@@ -72,7 +72,9 @@ namespace BlockDivision
             {
                 candidateRectangles.Add(CalculateBoundingRectangle(block, i, i+1));
             }
-            candidateRectangles.Add(CalculateBoundingRectangle(block, block.Nodes.Count - 1, 0));
+            candidateRectangles.Add(
+                CalculateBoundingRectangle(block, block.Nodes.Count - 1, 0)
+            );
 
             return GetSmallestBoundingRectangle(candidateRectangles);
         }
@@ -180,11 +182,7 @@ namespace BlockDivision
             //Here we need to check if the newly created block is valid
             
             //Check if the size is not too small
-            if (GetMinBoundingRectangle(block).GetArea() < 10f)
-            {
-                Debug.Log("Slice cancelled due to constraints (Small area)");
-                return false;
-            }
+            if (GetMinBoundingRectangle(block).GetArea() < 10f) return false;
 
             //Check if the aspect ratio is valid
             //Check etc.

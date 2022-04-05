@@ -330,8 +330,8 @@ MonoBehaviour:
   maxDegree: 7
   maxMajorRoad: 2000
   maxMinorRoad: 10000
-  majorThickness: 1
-  minorThickness: 0.5
+  majorThickness: 2.5
+  minorThickness: 0.9
   mapSize: 300
   seed: 8
   drawRoadNodes: 0
@@ -342,7 +342,7 @@ MonoBehaviour:
   drawConcaveBlocks: 0
   drawTriangulatedMeshes: 0
   drawBoundingBoxes: 0
-  drawLots: 0
+  drawLots: 1
 --- !u!4 &1253295795
 Transform:
   m_ObjectHideFlags: 0

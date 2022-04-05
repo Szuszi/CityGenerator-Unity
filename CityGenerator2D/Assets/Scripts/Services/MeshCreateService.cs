@@ -28,7 +28,7 @@ namespace Services
             return roadMesh;
         }
 
-        public static Mesh GenerateBlockMesh(BlockMesh block, float blockHeight)
+        public static Mesh GenerateBlockMesh(BlockMesh block)
         {
             Mesh lMesh = new Mesh();
 
@@ -41,9 +41,9 @@ namespace Services
             for (int i = 0; i < block.Triangles.Count; i++)
             {
                 //Change the Vectors (Y will be up vector)
-                Vector3 A = new Vector3(block.Triangles[i].A.x, blockHeight, block.Triangles[i].A.y);
-                Vector3 B = new Vector3(block.Triangles[i].B.x, blockHeight, block.Triangles[i].B.y);
-                Vector3 C = new Vector3(block.Triangles[i].C.x, blockHeight, block.Triangles[i].C.y);
+                Vector3 A = new Vector3(block.Triangles[i].A.x, block.Height, block.Triangles[i].A.y);
+                Vector3 B = new Vector3(block.Triangles[i].B.x, block.Height, block.Triangles[i].B.y);
+                Vector3 C = new Vector3(block.Triangles[i].C.x, block.Height, block.Triangles[i].C.y);
 
                 //Add attributes to Mesh
                 vertices[3 * i] = A;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BlockGeneration;
 using UnityEngine;
 
@@ -8,12 +9,15 @@ namespace MeshGeneration
     {
         private readonly List<Block> blocks;
         private float blockHeight;
+        private float maxBuildingHeight;
+        private float minBuildingHeight;
+        private System.Random rand;
 
         public List<Block> ConvexBlocks { get; private set; }
         public List<Block> ConcaveBlocks { get; private set; }
         public readonly List<BlockMesh> BlockMeshes;
 
-        public MeshGenerator(List<Block> blockToTriangulate, float blockDepth)
+        public MeshGenerator(List<Block> blockToTriangulate, float blockDepth, System.Random random)
         {
             blocks = blockToTriangulate;
             blockHeight = blockDepth;
@@ -21,28 +25,50 @@ namespace MeshGeneration
             ConcaveBlocks = new List<Block>();
             BlockMeshes = new List<BlockMesh>();
 
+            maxBuildingHeight = 10;
+            minBuildingHeight = 1;
+
+            rand = random;
         }
 
-        public void GenerateMeshes()
+        public void GenerateBlockMeshes()
         {
-            TriangulateBlocks();
+            TriangulateBlocks(blockHeight);
             BlockSideGeneration();
         }
 
-        private void TriangulateBlocks() //Triangulate Blocks, and make meshes out of them
+        public void GenerateLotMeshes()
+        {
+            TriangulateBlocks(-1f);
+            BlockSideGeneration();
+        }
+
+        private void TriangulateBlocks(float heightToUse) //Triangulate Blocks, and make meshes out of them
         {
             //Make BlockMeshes
             foreach(Block block in blocks)
             {
+                float height = heightToUse;
+                
+                if (Math.Abs(heightToUse - (-1)) < 0.0001f)
+                {
+                    height = (float) rand.NextDouble() * maxBuildingHeight + minBuildingHeight;
+                    
+                    if (block.Nodes.Count > 10)
+                    {
+                        height = blockHeight;
+                    }
+                }
+                
                 if (BlockIsConvex(block))
                 {
                     ConvexBlocks.Add(block); //For visualization
-                    ConvexTriangulation(block);
+                    ConvexTriangulation(block, height);
                 }
                 else
                 {
                     ConcaveBlocks.Add(block); //For visualization
-                    ConcaveTriangulation(block);
+                    ConcaveTriangulation(block, height);
                 }
             }
 
@@ -65,6 +91,8 @@ namespace MeshGeneration
             {
                 for(int i = 0; i < blockMesh.Block.Nodes.Count; i++)
                 {
+                    float height = blockMesh.Height;
+
                     BlockNode A;
                     BlockNode B;
 
@@ -79,8 +107,8 @@ namespace MeshGeneration
                         B = blockMesh.Block.Nodes[i+1];
                     }
 
-                    Vector3 vecA = new Vector3(A.X, blockHeight, A.Y);
-                    Vector3 vecB = new Vector3(B.X, blockHeight, B.Y);
+                    Vector3 vecA = new Vector3(A.X, height, A.Y);
+                    Vector3 vecB = new Vector3(B.X, height, B.Y);
                     Vector3 vecAA = new Vector3(A.X, 0.0f, A.Y);
                     Vector3 vecBB = new Vector3(B.X, 0.0f, B.Y);
 
@@ -165,9 +193,9 @@ namespace MeshGeneration
 
         //This function is responsible for making a BlockMesh from the given convex Block
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
-        private void ConvexTriangulation(Block block)
+        private void ConvexTriangulation(Block block, float heightToSet)
         {
-            BlockMesh convexMesh = new BlockMesh(block);
+            BlockMesh convexMesh = new BlockMesh(block, heightToSet);
             
             for (int i = 2; i < block.Nodes.Count; i++)
             {
@@ -184,7 +212,7 @@ namespace MeshGeneration
         //This function is responsible for making a BlockMesh from the given concave Block
         //The points on the polygon should be ordered counter-clockwise, Triangulation is made with ear-clipping
         //Method is from the link: https://www.habrador.com/tutorials/math/10-triangulation/
-        private void ConcaveTriangulation(Block block) 
+        private void ConcaveTriangulation(Block block, float heightToSet) 
         {
             //Step 0. Check if the block stores the vertexes counter clockwise or not
             bool counterClockwise = IsCounterClockwise(block);
@@ -285,7 +313,7 @@ namespace MeshGeneration
             }
 
             //Step4 insert the triangles inside the BlockMesh
-            BlockMesh concaveMesh = new BlockMesh(block);
+            BlockMesh concaveMesh = new BlockMesh(block, heightToSet);
 
             foreach(Triangle tri in triangles)
             {

@@ -33,8 +33,10 @@ namespace Services
             if (blocks == null) return;
 
             Gizmos.color = color;
-            foreach (Block block in blocks)
+            for (int x = blocks.Count-1; x > -1; x--)
             {
+                var block = blocks[x];
+                
                 for (int i = 0; i < block.Nodes.Count; i++)
                 {
                     if (i == (block.Nodes.Count - 1))
