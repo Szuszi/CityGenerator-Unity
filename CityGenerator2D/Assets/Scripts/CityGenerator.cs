@@ -55,6 +55,8 @@ public class CityGenerator : MonoBehaviour
     [Header("Block subdivision")] 
     public bool drawBoundingBoxes;
     public bool drawLots;
+    public float minBuildHeight = 1;
+    public float maxBuildHeight = 10;
 
     //Event to call, when the generation is ready
     private bool genReady;
@@ -97,7 +99,7 @@ public class CityGenerator : MonoBehaviour
         Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
 
         //BLOCK GENERATION
-        BlockGenerator blockGen = new BlockGenerator(roadGraph, majorThickness, minorThickness);
+        BlockGenerator blockGen = new BlockGenerator(roadGraph, majorThickness, minorThickness, blockHeight);
         blockGen.Generate();
         blockNodes = blockGen.BlockNodes;
         blocks = blockGen.Blocks;
@@ -106,10 +108,11 @@ public class CityGenerator : MonoBehaviour
         //BLOCK DIVISION
         BlockDivider blockDiv = new BlockDivider(rand, blocks, lots);
         blockDiv.DivideBlocks();
+        blockDiv.SetBuildingHeights(minBuildHeight, maxBuildHeight, blockHeight, mapSize);
         boundingRectangles = blockDiv.BoundingRectangles;
 
         //MESH GENERATION
-        MeshGenerator meshGen = new MeshGenerator(lots, blockHeight, rand);
+        MeshGenerator meshGen = new MeshGenerator(rand, lots, blockHeight, minBuildHeight, maxBuildHeight);
         meshGen.GenerateLotMeshes();
 
         convexBlocks = meshGen.ConvexBlocks;

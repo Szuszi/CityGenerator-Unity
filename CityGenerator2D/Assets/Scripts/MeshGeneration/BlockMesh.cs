@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BlockGeneration;
 using UnityEngine;
 
@@ -11,12 +12,12 @@ namespace MeshGeneration
         public readonly List<Triangle> SideTriangles;
         public readonly float Height;
 
-        public BlockMesh (Block blockToUse, float blockHeight) 
+        public BlockMesh (Block blockToUse) 
         {
             Block = blockToUse;
             Triangles = new List<Triangle>();
             SideTriangles = new List<Triangle>();
-            Height = blockHeight;
+            Height = blockToUse.Height;
         }
 
         public void AddTriangle(Vector3 a, Vector3 b, Vector3 c)

@@ -12,10 +12,11 @@ namespace BlockGeneration
         public List<BlockNode> BlockNodes { get; private set; }
         public List<Block> Blocks { get; private set; }
 
-        private float majorRoadThickness;
-        private float minorRoadThickness;
+        private readonly float majorRoadThickness;
+        private readonly float minorRoadThickness;
+        private readonly float blockHeight;
 
-        public BlockGenerator(Graph graphToUse, float majorThickness, float minorThickness)
+        public BlockGenerator(Graph graphToUse, float majorThickness, float minorThickness, float blockHeight)
         {
             graph = graphToUse;
             BlockNodes = new List<BlockNode>();
@@ -23,6 +24,7 @@ namespace BlockGeneration
 
             majorRoadThickness = majorThickness;
             minorRoadThickness = minorThickness;
+            this.blockHeight = blockHeight;
         }
 
         public void Generate()
@@ -65,7 +67,9 @@ namespace BlockGeneration
             {
                 if(blockNode.Block == null)
                 {
-                    Block newBlock = new Block();
+                    var newBlock = new Block();
+                    newBlock.Height = blockHeight;
+                    
                     Blocks.Add(newBlock);
                     if (!FormBlock(blockNode, blockNode.Edges[0], newBlock, 1))
                     {

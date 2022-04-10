@@ -12,7 +12,7 @@ namespace BlockDivision
         private readonly System.Random rand;
         public List<BoundingRectangle> BoundingRectangles { get; set; }
         
-        public List<Block> Lots { get; set; }
+        private List<Block> Lots { get; set; }
 
         public BlockDivider(System.Random seededRandom, List<Block> blocksToDivide, List<Block> lots)
         {
@@ -27,6 +27,43 @@ namespace BlockDivision
             foreach (var block in blocks)
             {
                 Lots.AddRange(DivideBlock(block, 1));
+            }
+        }
+        
+        public void SetBuildingHeights
+        (
+            float minBuildingHeight,
+            float maxBuildingHeight,
+            float baseHeight,
+            int mapSize
+        )
+        {
+            foreach (var lot in Lots)
+            {
+                var height = (float) rand.NextDouble() * maxBuildingHeight + minBuildingHeight;
+
+                if (height > maxBuildingHeight / 2 && rand.Next(0, 10) != 2)
+                {
+                    height = height / 2;
+                }
+
+                if (mapSize - Math.Abs(lot.Nodes[0].X) < (float) 2 * mapSize / 3 
+                    || mapSize - Math.Abs(lot.Nodes[0].Y) < (float) 2 * mapSize / 3)
+                {
+                    height = height / 2;
+                }
+
+                if (height < minBuildingHeight)
+                {
+                    height = height + minBuildingHeight;
+                }
+                    
+                if (lot.Nodes.Count > 10)
+                {
+                    height = baseHeight;
+                }
+
+                lot.Height = height;
             }
         }
 
