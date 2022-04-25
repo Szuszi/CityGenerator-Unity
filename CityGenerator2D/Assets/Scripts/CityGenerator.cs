@@ -13,20 +13,21 @@ public class CityGenerator : MonoBehaviour
     private Graph roadGraph; //Graph which will be built, and then drawn
     private List<BlockNode> blockNodes; //Nodes of the Blocks
     private List<Block> blocks;
+    private List<Block> thinnedBlocks;
     private List<Block> lots;
     private System.Random rand;
 
     private List<Block> concaveBlocks;
     private List<Block> convexBlocks;
     private List<BlockMesh> blockMeshes;
+    private List<BlockMesh> lotMeshes;
     private List<BoundingRectangle> boundingRectangles;
     private float blockHeight = 0.02f;
 
     [Header("Maximum Curve between Roads")]
     [Range(0, 20)]
     public int maxDegree = 2;
-        
-    [Header("Maximum Number of Roads")]
+
     [Header("Maximum Number of Roads")]
     public int maxMajorRoad = 1000;
     public int maxMinorRoad = 10000;
@@ -40,31 +41,33 @@ public class CityGenerator : MonoBehaviour
     [Header("Seed and Size")]
     public int mapSize = 200;
     public int seed = 7;
+    
+    [Header("Building generation")] 
+    public float minBuildHeight = 1;
+    public float maxBuildHeight = 10;
+
+    [Header("Sidewalk generation")]
+    [Range(0.1f, 1f)]
+    public float sidewalkThickness = 0.5f;
 
     [Header("Gizmos")]
     public bool drawRoadNodes;
     public bool drawRoads = true;
     public bool drawBlockNodes;
     public bool drawBlocks = true;
-
-    [Header("Mesh Generation")]
+    public bool drawThinnedBlocks;
     public bool drawConvexBlocks;
     public bool drawConcaveBlocks;
     public bool drawTriangulatedMeshes;
-
-    [Header("Block subdivision")] 
     public bool drawBoundingBoxes;
-    public bool drawLots;
-    public float minBuildHeight = 1;
-    public float maxBuildHeight = 10;
+    public bool drawLots = true;
 
     //Event to call, when the generation is ready
     private bool genReady;
     private bool genDone;
-        
-
+    
     void Start()
-    {
+    { 
         rand = new System.Random(seed);
         roadGraph = new Graph();
         lots = new List<Block>();
@@ -92,7 +95,7 @@ public class CityGenerator : MonoBehaviour
         MinorGenerator minorGen = new MinorGenerator(rand, mapSize, maxMinorRoad, roadGraph, majorGen.GetRoadSegments());
         minorGen.Run();
 
-        //GENERATION TIME, ROAD COUNT
+        //ROAD GENERATION TIME, ROAD COUNT
         sw.Stop();
         Debug.Log("Road generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
         Debug.Log(majorGen.GetRoadSegments().Count + " major road generated");
@@ -105,19 +108,36 @@ public class CityGenerator : MonoBehaviour
         blocks = blockGen.Blocks;
         Debug.Log(blockGen.Blocks.Count + " block generated");
         
+        //SIDEWALK GENERATION
+        blockGen.ThickenBlocks(sidewalkThickness);
+        thinnedBlocks = blockGen.ThinnedBlocks;
+        Debug.Log("Sidewalk generation completed");
+        
         //BLOCK DIVISION
-        BlockDivider blockDiv = new BlockDivider(rand, blocks, lots);
+        sw = System.Diagnostics.Stopwatch.StartNew();
+        
+        BlockDivider blockDiv = new BlockDivider(rand, thinnedBlocks, lots);
         blockDiv.DivideBlocks();
         blockDiv.SetBuildingHeights(minBuildHeight, maxBuildHeight, blockHeight, mapSize);
         boundingRectangles = blockDiv.BoundingRectangles;
+        
+        //LOT GENERATION TIME, LOT COUNT
+        sw.Stop();
+        Debug.Log("Lot generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
+        Debug.Log(lots.Count + " lot generated");
 
-        //MESH GENERATION
-        MeshGenerator meshGen = new MeshGenerator(rand, lots, blockHeight, minBuildHeight, maxBuildHeight);
-        meshGen.GenerateLotMeshes();
+        //BLOCK MESH GENERATION
+        MeshGenerator blockMeshGen = new MeshGenerator(blocks, blockHeight);
+        blockMeshGen.GenerateMeshes();
+        blockMeshes = blockMeshGen.BlockMeshes;
+        
+        //LOT MESH GENERATION
+        MeshGenerator lotMeshGen = new MeshGenerator(lots, blockHeight);
+        lotMeshGen.GenerateMeshes();
 
-        convexBlocks = meshGen.ConvexBlocks;
-        concaveBlocks = meshGen.ConcaveBlocks;
-        blockMeshes = meshGen.BlockMeshes;
+        convexBlocks = lotMeshGen.ConvexBlocks;
+        concaveBlocks = lotMeshGen.ConcaveBlocks;
+        lotMeshes = lotMeshGen.BlockMeshes;
 
         genReady = true;
     }
@@ -156,7 +176,23 @@ public class CityGenerator : MonoBehaviour
             if (blockMeshes[i].Block.Nodes.Count > 10) block.GetComponent<MeshRenderer>().material = blockGreenMaterial;
             else block.GetComponent<MeshRenderer>().material = blockMaterial;
         }
+        
+        //Make Lots
+        GameObject lotContainer = new GameObject();
+        lotContainer.name = "Lot Container";
 
+        Material lotMaterial = Resources.Load<Material>("Material/BlockMaterial");
+
+        for (int i = 0; i < lotMeshes.Count; i++)
+        {
+            GameObject lot = new GameObject();
+            lot.name = "Lot" + i.ToString();
+            lot.transform.parent = blockContainer.transform;
+            lot.AddComponent<MeshFilter>();
+            lot.AddComponent<MeshRenderer>();
+            lot.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(lotMeshes[i]);
+            lot.GetComponent<MeshRenderer>().material = lotMaterial;
+        }
     }
 
     private void OnDrawGizmos()
@@ -186,6 +222,11 @@ public class CityGenerator : MonoBehaviour
         if (drawBlocks)
         {
             GizmoService.DrawBlocks(blocks, new Color(0.7f, 0.4f, 0.4f));
+        }
+
+        if (drawThinnedBlocks)
+        {
+            GizmoService.DrawBlocks(thinnedBlocks, new Color(0.7f, 0.4f, 0.4f));
         }
 
         if (drawConvexBlocks && genDone)

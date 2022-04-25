@@ -9,9 +9,6 @@ namespace MeshGeneration
     {
         private readonly List<Block> blocks;
         private float blockHeight;
-        private float maxBuildingHeight;
-        private float minBuildingHeight;
-        private System.Random rand;
 
         public List<Block> ConvexBlocks { get; private set; }
         public List<Block> ConcaveBlocks { get; private set; }
@@ -19,11 +16,8 @@ namespace MeshGeneration
 
         public MeshGenerator
         (
-            System.Random random,
             List<Block> blockToTriangulate,
-            float blockDepth,
-            float minLotHeight,
-            float maxLotHeight 
+            float blockDepth
         )
         {
             blocks = blockToTriangulate;
@@ -31,20 +25,9 @@ namespace MeshGeneration
             ConvexBlocks = new List<Block>();
             ConcaveBlocks = new List<Block>();
             BlockMeshes = new List<BlockMesh>();
-
-            maxBuildingHeight = maxLotHeight;
-            minBuildingHeight = minLotHeight;
-
-            rand = random;
         }
 
-        public void GenerateBlockMeshes()
-        {
-            TriangulateBlocks();
-            BlockSideGeneration();
-        }
-
-        public void GenerateLotMeshes()
+        public void GenerateMeshes()
         {
             TriangulateBlocks();
             BlockSideGeneration();
@@ -63,6 +46,7 @@ namespace MeshGeneration
                 else
                 {
                     ConcaveBlocks.Add(block); //For visualization
+                    block.Height = blockHeight; //Concave lots should be flat
                     ConcaveTriangulation(block);
                 }
             }

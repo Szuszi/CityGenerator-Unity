@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 873131863}
   m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
@@ -257,7 +257,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -343,24 +343,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67321ef99586cd4c8e1ce7185a8383c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDegree: 7
+  maxDegree: 9
   maxMajorRoad: 2000
   maxMinorRoad: 10000
   majorThickness: 2.5
   minorThickness: 0.9
   mapSize: 300
-  seed: 8
+  seed: 13
+  minBuildHeight: 2
+  maxBuildHeight: 15
+  sidewalkThickness: 0.5
   drawRoadNodes: 0
   drawRoads: 1
   drawBlockNodes: 0
   drawBlocks: 1
+  drawThinnedBlocks: 0
   drawConvexBlocks: 0
   drawConcaveBlocks: 0
   drawTriangulatedMeshes: 0
   drawBoundingBoxes: 0
   drawLots: 1
-  minBuildHeight: 0.5
-  maxBuildHeight: 15
 --- !u!4 &1253295795
 Transform:
   m_ObjectHideFlags: 0

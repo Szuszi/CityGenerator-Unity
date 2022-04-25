@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using BlockGeneration;
-using UnityEngine;
+using Services;
 using Node = GraphModel.Node;
 
 namespace BlockDivision
@@ -9,12 +9,12 @@ namespace BlockDivision
     class BlockDivider
     {
         private readonly List<Block> blocks;
-        private readonly System.Random rand;
+        private readonly Random rand;
         public List<BoundingRectangle> BoundingRectangles { get; set; }
         
         private List<Block> Lots { get; set; }
 
-        public BlockDivider(System.Random seededRandom, List<Block> blocksToDivide, List<Block> lots)
+        public BlockDivider(Random seededRandom, List<Block> blocksToDivide, List<Block> lots)
         {
             blocks = blocksToDivide;
             Lots = lots;
@@ -69,9 +69,8 @@ namespace BlockDivision
 
         private List<Block> DivideBlock(Block block,int iteration)
         {
-            if (iteration > 5)
+            if (iteration > 6)
             {
-                Debug.Log("Maximum iteration reached for block division");
                 return new List<Block> {block};
             } 
             else if (block.Nodes.Count > 10)
@@ -79,7 +78,7 @@ namespace BlockDivision
                 return new List<Block> {block};
             }
 
-            var minBoundingRect = GetMinBoundingRectangle(block);
+            var minBoundingRect = BoundingService.GetMinBoundingRectangle(block);
             BoundingRectangles.Add(minBoundingRect);
             var cuttingLine = minBoundingRect.GetCutLine(rand);
             
@@ -101,125 +100,12 @@ namespace BlockDivision
             return new List<Block> {block};
         }
 
-        private BoundingRectangle GetMinBoundingRectangle(Block block)
-        {
-            var candidateRectangles = new List<BoundingRectangle>();
-
-            for (int i = 0; i < block.Nodes.Count - 1; i++)
-            {
-                candidateRectangles.Add(CalculateBoundingRectangle(block, i, i+1));
-            }
-            candidateRectangles.Add(
-                CalculateBoundingRectangle(block, block.Nodes.Count - 1, 0)
-            );
-
-            return GetSmallestBoundingRectangle(candidateRectangles);
-        }
-
-        private BoundingRectangle CalculateBoundingRectangle(Block block, int firstNodeIndex, int otherNodeIndex)
-        {
-            var baseLine = new Line(block.Nodes[firstNodeIndex].GetNodeForm(),
-                                    block.Nodes[otherNodeIndex].GetNodeForm());
-            
-            var sideLines = GetMinMaxPerpendicularLine(baseLine, block);
-            var otherSideLines = GetMinMaxPerpendicularLine(sideLines[0], block);
-
-            var boundingNodes = new List<Node>();
-            boundingNodes.Add(sideLines[0].getCrossing(otherSideLines[0]));
-            boundingNodes.Add(sideLines[0].getCrossing(otherSideLines[1]));
-            boundingNodes.Add(sideLines[1].getCrossing(otherSideLines[0]));
-            boundingNodes.Add(sideLines[1].getCrossing(otherSideLines[1]));
-
-            return new BoundingRectangle(boundingNodes);
-        }
-
-        private List<Line> GetMinMaxPerpendicularLine(Line baseLine, Block block)
-        {
-            var candidateEdgeLines = new List<Line>();
-            
-            foreach (var blockNode in block.Nodes)
-            {
-                var baseNode = new Node(blockNode.X, blockNode.Y);
-                Line perpendicularLine = baseLine.CalculatePerpendicularLine(baseNode);
-                candidateEdgeLines.Add(perpendicularLine);
-            }
-            
-            int currentMinIdx = 0;
-            int currentMaxIdx = 0;
-            
-            // Special case: Normal Vector of the line has X as 0
-            if (baseLine.NormalVector.x == 0)
-            {
-                float currentMin = baseLine.getCrossing(candidateEdgeLines[0]).Y;
-                float currentMax = currentMin;
-                foreach (var line in candidateEdgeLines)
-                {
-                    Node crossingNode = baseLine.getCrossing(line);
-                    if (crossingNode == null) continue;
-
-                    if (currentMin > crossingNode.Y)
-                    {
-                        currentMin = crossingNode.Y;
-                        currentMinIdx = candidateEdgeLines.IndexOf(line);
-                    }
-
-                    if (currentMax < crossingNode.Y)
-                    {
-                        currentMax = crossingNode.Y;
-                        currentMaxIdx = candidateEdgeLines.IndexOf(line);
-                    }
-                }
-            }
-            else
-            {
-                float currentMin = baseLine.getCrossing(candidateEdgeLines[0]).X;
-                float currentMax = currentMin;
-                foreach (var line in candidateEdgeLines)
-                {
-                    Node crossingNode = baseLine.getCrossing(line);
-                    if (crossingNode == null) continue;
-
-                    if (currentMin > crossingNode.X)
-                    {
-                        currentMin = crossingNode.X;
-                        currentMinIdx = candidateEdgeLines.IndexOf(line);
-                    }
-
-                    if (currentMax < crossingNode.X)
-                    {
-                        currentMax = crossingNode.X;
-                        currentMaxIdx = candidateEdgeLines.IndexOf(line);
-                    }
-                }
-            }
-            
-            return new List<Line> {candidateEdgeLines[currentMinIdx] , candidateEdgeLines[currentMaxIdx]};
-        }
-
-        private BoundingRectangle GetSmallestBoundingRectangle(List<BoundingRectangle> boundingRectangles)
-        {
-            var smallestRectangleSize = boundingRectangles[0].GetSize();
-            var smallestRectangleIdx = 0;
-
-            foreach (var rectangle in boundingRectangles)
-            {
-                var currentSize = rectangle.GetSize();
-                if (smallestRectangleSize > currentSize)
-                {
-                    smallestRectangleSize = currentSize;
-                    smallestRectangleIdx = boundingRectangles.IndexOf(rectangle);
-                }
-            }
-
-            return boundingRectangles[smallestRectangleIdx];
-        }
-
         private bool ValidBlock(Block block)
         {
             //Here we need to check if the newly created block is valid
             
             //Check if the size is not too small
-            if (GetMinBoundingRectangle(block).GetArea() < 10f) return false;
+            if (BoundingService.GetMinBoundingRectangle(block).GetArea() < 10f) return false;
 
             //Check if the aspect ratio is valid
             //Check etc.

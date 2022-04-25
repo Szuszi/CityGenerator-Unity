@@ -90,15 +90,6 @@ namespace BlockDivision
 
             return new Edge(middlePoint, otherMiddlePoint);
         }
-
-        public float GetSize()
-        {
-            var firstEdgeLength = VectorService.NodesToDirection(Edges[0].NodeA, Edges[0].NodeB).magnitude;
-            var secondEdgeLength = VectorService.NodesToDirection(Edges[1].NodeA, Edges[1].NodeB).magnitude;
-
-            return firstEdgeLength * secondEdgeLength;
-        }
-
         public float GetArea()
         {
             var firstEdgeLength = VectorService.NodesToDirection(Edges[0].NodeA, Edges[0].NodeB).magnitude;

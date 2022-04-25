@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using GraphModel;
+using Services;
 using UnityEngine;
 
 namespace BlockGeneration
@@ -11,6 +12,7 @@ namespace BlockGeneration
         private readonly Graph graph;
         public List<BlockNode> BlockNodes { get; private set; }
         public List<Block> Blocks { get; private set; }
+        public List<Block> ThinnedBlocks { get; private set; }
 
         private readonly float majorRoadThickness;
         private readonly float minorRoadThickness;
@@ -21,6 +23,7 @@ namespace BlockGeneration
             graph = graphToUse;
             BlockNodes = new List<BlockNode>();
             Blocks = new List<Block>();
+            ThinnedBlocks = new List<Block>();
 
             majorRoadThickness = majorThickness;
             minorRoadThickness = minorThickness;
@@ -33,6 +36,17 @@ namespace BlockGeneration
             CreateBlocks();
             DeleteMapEdgeBlocks();
         }
+        
+        public void ThickenBlocks(float sidewalkThickness)
+        {
+            foreach (Block block in Blocks)
+            {
+                var thinnedBlock = GetTinnedBlock(block, sidewalkThickness);
+                ThinnedBlocks.Add(thinnedBlock);
+            }
+
+            RemoveAbnormalBlocks();
+        }
 
         //Makes the Nodes thicker, by extending them by the given thickness.
         private void ThickenNodes()
@@ -44,7 +58,8 @@ namespace BlockGeneration
                 else if(node.Edges.Count == 2) TwoEdgedThickening(node, majorRoadThickness);
                 else if(node.Edges.Count == 3) ThreeEdgedThickening(node, majorRoadThickness);
                 else if(node.Edges.Count == 4) FourEdgedThickening(node, majorRoadThickness);
-                else if(node.Edges.Count > 4) throw new ArgumentException("Node has more than four edges", nameof(node));
+                else if(node.Edges.Count > 4)
+                    throw new ArgumentException("Node has more than four edges", nameof(node));
                 else throw new ArgumentException("Node has no edges", nameof(node));
             }
 
@@ -55,7 +70,8 @@ namespace BlockGeneration
                 else if (node.Edges.Count == 2) TwoEdgedThickening(node, minorRoadThickness);
                 else if (node.Edges.Count == 3) ThreeEdgedThickening(node, minorRoadThickness);
                 else if (node.Edges.Count == 4) FourEdgedThickening(node, minorRoadThickness);                
-                else if (node.Edges.Count > 4)  throw new ArgumentException("Node has more than four edges", nameof(node));
+                else if (node.Edges.Count > 4)
+                    throw new ArgumentException("Node has more than four edges", nameof(node));
                 else throw new ArgumentException("Node has no edges", nameof(node));
             }
         }
@@ -103,8 +119,13 @@ namespace BlockGeneration
 
                 else //There are also Edge Blocks which first and last BlockNode is in the same Node
                 {
-                    Node firstNode = block.Nodes[0].Edges[0].NodeA.BlockNodes.Contains(block.Nodes[0]) ? block.Nodes[0].Edges[0].NodeA : block.Nodes[0].Edges[0].NodeB;
-                    Node lastNode = block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA.BlockNodes.Contains(block.Nodes[block.Nodes.Count - 1]) ? block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA : block.Nodes[block.Nodes.Count - 1].Edges[0].NodeB;
+                    Node firstNode = block.Nodes[0].Edges[0].NodeA.BlockNodes.Contains(block.Nodes[0]) 
+                        ? block.Nodes[0].Edges[0].NodeA 
+                        : block.Nodes[0].Edges[0].NodeB;
+                    Node lastNode = block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA.BlockNodes
+                        .Contains(block.Nodes[block.Nodes.Count - 1]) 
+                        ? block.Nodes[block.Nodes.Count - 1].Edges[0].NodeA 
+                        : block.Nodes[block.Nodes.Count - 1].Edges[0].NodeB;
 
                     if (firstNode == lastNode) removable.Add(block);
                 }
@@ -116,6 +137,34 @@ namespace BlockGeneration
             }
         }
 
+        private void RemoveAbnormalBlocks()
+        {
+            List<int> removableIndexes = new List<int>();
+            
+            foreach (Block block in ThinnedBlocks)
+            {
+                if (block.Nodes.Count > 10)
+                {
+                    removableIndexes.Add(ThinnedBlocks.IndexOf(block));
+                    continue;
+                }
+
+                var boundingRect = BoundingService.GetMinBoundingRectangle(block);
+                if (boundingRect.GetArea() < 10f)
+                {
+                    removableIndexes.Add(ThinnedBlocks.IndexOf(block));
+                }
+            }
+
+            for (int i = ThinnedBlocks.Count - 1; i > -1; i--)
+            {
+                if (removableIndexes.Contains(i))
+                {
+                    ThinnedBlocks.RemoveAt(i);
+                }
+            }
+        }
+
 
 
         /**
@@ -124,15 +173,21 @@ namespace BlockGeneration
 
         private void OneEdgedThickening(Node node, float thickness)
         {
-            if (node.Edges.Count != 1) throw new ArgumentException("Parameter node doesn't have exactly one edges", nameof(node)); //this only work for nodes, which has only one edge
+            //this only work for nodes, which has only one edge
+            if (node.Edges.Count != 1) 
+                throw new ArgumentException("Parameter node doesn't have exactly one edges", nameof(node));
 
             //Calculate
             float dirRadian;
             if (node.Edges[0].NodeA == node) dirRadian = node.Edges[0].DirRadianFromA;
             else dirRadian = node.Edges[0].DirRadianFromB;
 
-            Vector2 leftForward = new Vector2(Mathf.Cos(dirRadian + 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4), Mathf.Sin(dirRadian + 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4));
-            Vector2 rightForward = new Vector2(Mathf.Cos(dirRadian - 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4), Mathf.Sin(dirRadian - 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4));
+            Vector2 leftForward = new Vector2(
+                Mathf.Cos(dirRadian + 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4),
+                Mathf.Sin(dirRadian + 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4));
+            Vector2 rightForward = new Vector2(
+                Mathf.Cos(dirRadian - 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4),
+                Mathf.Sin(dirRadian - 1.5f * Mathf.PI / 2) * thickness * 1f / Mathf.Sin(Mathf.PI / 4));
 
 
             //Then store it
@@ -151,22 +206,9 @@ namespace BlockGeneration
 
         private void TwoEdgedThickening(Node node, float thickness)
         {
-            if (node.Edges.Count != 2) throw new ArgumentException("Parameter node doesn't have exactly two edges", nameof(node)); //this only work for nodes, which has two edges
-
-            //Calculate
-            float averageRad1 = AverageRadianFromTwoEdges(node.Edges[0], node.Edges[1], node);
-            float radianDiff1 = RadianDifferenceFromTwoEdges(node.Edges[0], node.Edges[1], node);
-
-            float averageRad2 = averageRad1 + Mathf.PI;
-            float radianDiff2 = 2f * Mathf.PI - radianDiff1;
-
-            Vector2 vec1 = new Vector2(Mathf.Cos(averageRad1) * thickness * (1f / Mathf.Sin(radianDiff1 / 2)), Mathf.Sin(averageRad1) * thickness * (1f / Mathf.Sin(radianDiff1 / 2)));
-            Vector2 vec2 = new Vector2(Mathf.Cos(averageRad2) * thickness * (1f / Mathf.Sin(radianDiff2 / 2)), Mathf.Sin(averageRad2) * thickness * (1f / Mathf.Sin(radianDiff2 / 2)));
-
-
-            //Then store it
-            BlockNode blockNode1 = new BlockNode(node.X + vec1.x, node.Y + vec1.y);
-            BlockNode blockNode2 = new BlockNode(node.X + vec2.x, node.Y + vec2.y);
+            var newBlockNodes = GetTwoEdgedThickenedNodes(node, thickness);
+            var blockNode1 = newBlockNodes[0];
+            var blockNode2 = newBlockNodes[1];
 
             blockNode1.Edges.Add(node.Edges[0]);
             blockNode1.Edges.Add(node.Edges[1]);
@@ -180,9 +222,43 @@ namespace BlockGeneration
             BlockNodes.Add(blockNode2);
         }
 
+        private List<BlockNode> GetTwoEdgedThickenedNodes(Node node, float thickness)
+        {
+            //this only work for nodes, which has two edges
+            if (node.Edges.Count != 2) 
+                throw new ArgumentException("Parameter node doesn't have exactly two edges", nameof(node));
+            
+            //Calculate
+            float averageRad1 = AverageRadianFromTwoEdges(node.Edges[0], node.Edges[1], node);
+            float radianDiff1 = RadianDifferenceFromTwoEdges(node.Edges[0], node.Edges[1], node);
+
+            float averageRad2 = averageRad1 + Mathf.PI;
+            float radianDiff2 = 2f * Mathf.PI - radianDiff1;
+
+            Vector2 vec1 = new Vector2(
+                Mathf.Cos(averageRad1) * thickness * (1f / Mathf.Sin(radianDiff1 / 2)),
+                Mathf.Sin(averageRad1) * thickness * (1f / Mathf.Sin(radianDiff1 / 2)));
+            Vector2 vec2 = new Vector2(
+                Mathf.Cos(averageRad2) * thickness * (1f / Mathf.Sin(radianDiff2 / 2)),
+                Mathf.Sin(averageRad2) * thickness * (1f / Mathf.Sin(radianDiff2 / 2)));
+
+
+            //Then store it
+            BlockNode blockNode1 = new BlockNode(node.X + vec1.x, node.Y + vec1.y);
+            BlockNode blockNode2 = new BlockNode(node.X + vec2.x, node.Y + vec2.y);
+
+            var returnList = new List<BlockNode>();
+            returnList.Add(blockNode1);
+            returnList.Add(blockNode2);
+
+            return returnList;
+        }
+
         private void ThreeEdgedThickening(Node node, float thickness)
         {
-            if (node.Edges.Count != 3) throw new ArgumentException("Parameter node doesn't have exactly three edges", nameof(node)); //this only work for nodes, which has three edges
+            //this only work for nodes, which has three edges
+            if (node.Edges.Count != 3) 
+                throw new ArgumentException("Parameter node doesn't have exactly three edges", nameof(node));
             
             bool majorWithMinor = false;
 
@@ -191,8 +267,18 @@ namespace BlockGeneration
             Edge edge2 = node.Edges[1];
             Edge edge3 = node.Edges[2];
 
-            if (!(graph.MajorEdges.Contains(edge1) && graph.MajorEdges.Contains(edge2) && graph.MajorEdges.Contains(edge3)) && !(graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3))) majorWithMinor = true;
-
+            if (!(
+                    graph.MajorEdges.Contains(edge1) &&
+                    graph.MajorEdges.Contains(edge2) &&
+                    graph.MajorEdges.Contains(edge3))
+                && !(
+                    graph.MinorEdges.Contains(edge1) &&
+                    graph.MinorEdges.Contains(edge2) &&
+                    graph.MinorEdges.Contains(edge3)))
+            {
+                majorWithMinor = true;
+            }
+            
             float averageRad12 = AverageRadianFromTwoEdges(edge1, edge2, node);
             float averageRad13 = AverageRadianFromTwoEdges(edge1, edge3, node);
             float averageRad23 = AverageRadianFromTwoEdges(edge2, edge3, node);
@@ -200,54 +286,82 @@ namespace BlockGeneration
             float radianDiff12 = RadianDifferenceFromTwoEdges(edge1, edge2, node);
             float radianDiff13 = RadianDifferenceFromTwoEdges(edge1, edge3, node);
             float radianDiff23 = RadianDifferenceFromTwoEdges(edge2, edge3, node);
-
-            if (radianDiff12 > Mathf.PI / 2)
-            {
-                if (!CorrectThreeEdgedAverage(averageRad12, edge3, node)) averageRad12 += Mathf.PI;
-            }
-            if (radianDiff13 > Mathf.PI / 2)
-            {
-                if (!CorrectThreeEdgedAverage(averageRad13, edge2, node)) averageRad13 += Mathf.PI;
-            }
-            if (radianDiff23 > Mathf.PI / 2)
-            {
-                if (!CorrectThreeEdgedAverage(averageRad23, edge1, node)) averageRad23 += Mathf.PI;
-            }
+            
+            if (radianDiff12 > Mathf.PI / 2 && !CorrectThreeEdgedAverage(averageRad12, edge3, node))
+                averageRad12 += Mathf.PI;
+            
+            if (radianDiff13 > Mathf.PI / 2 && !CorrectThreeEdgedAverage(averageRad13, edge2, node))
+                averageRad13 += Mathf.PI;
+            
+            if (radianDiff23 > Mathf.PI / 2 && !CorrectThreeEdgedAverage(averageRad23, edge1, node))
+                averageRad23 += Mathf.PI;
 
             Vector2 vec12;
             Vector2 vec13;
             Vector2 vec23;
 
             //If one of the crossing is a Major-Minor crossing, make the vectors in a different way.
-            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2)) || (graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge1))) vec12 = MajorMinorCrossingThickening(edge1, edge2, node, radianDiff12);
+            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2))
+                || (graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge1)))
+            {
+                vec12 = MajorMinorCrossingThickening(edge1, edge2, node, radianDiff12);
+            }
             else
             {
                 
                 if(majorWithMinor && graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2))
                 {
-                    vec12 = new Vector2(Mathf.Cos(averageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)), Mathf.Sin(averageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)));
+                    vec12 = new Vector2(
+                        Mathf.Cos(averageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)),
+                        Mathf.Sin(averageRad12) * thickness/2 * (1f / Mathf.Sin(radianDiff12 / 2)));
                 }
-                else vec12 = new Vector2(Mathf.Cos(averageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)), Mathf.Sin(averageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)));
+                else 
+                {
+                    vec12 = new Vector2(
+                        Mathf.Cos(averageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)),
+                        Mathf.Sin(averageRad12) * thickness * (1f / Mathf.Sin(radianDiff12 / 2)));
+                }
             }
 
-            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge3)) || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge1))) vec13 = MajorMinorCrossingThickening(edge1, edge3, node, radianDiff13);
+            if ((graph.MajorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge3))
+                || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge1)))
+            {
+                vec13 = MajorMinorCrossingThickening(edge1, edge3, node, radianDiff13);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge3))
                 {
-                    vec13 = new Vector2(Mathf.Cos(averageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)), Mathf.Sin(averageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)));
+                    vec13 = new Vector2(
+                        Mathf.Cos(averageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)),
+                        Mathf.Sin(averageRad13) * thickness/2 * (1f / Mathf.Sin(radianDiff13 / 2)));
                 }
-                else vec13 = new Vector2(Mathf.Cos(averageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)), Mathf.Sin(averageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)));
+                else {
+                    vec13 = new Vector2(
+                        Mathf.Cos(averageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)),
+                        Mathf.Sin(averageRad13) * thickness * (1f / Mathf.Sin(radianDiff13 / 2)));
+                }
             }
 
-            if ((graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3)) || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge2))) vec23 = MajorMinorCrossingThickening(edge2, edge3, node, radianDiff23);
+            if ((graph.MajorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3))
+                || (graph.MajorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge2)))
+            {
+                vec23 = MajorMinorCrossingThickening(edge2, edge3, node, radianDiff23);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3))
                 {
-                    vec23 = new Vector2(Mathf.Cos(averageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)), Mathf.Sin(averageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)));
+                    vec23 = new Vector2(
+                        Mathf.Cos(averageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)),
+                        Mathf.Sin(averageRad23) * thickness/2 * (1f / Mathf.Sin(radianDiff23 / 2)));
                 }
-                else vec23 = new Vector2(Mathf.Cos(averageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)), Mathf.Sin(averageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)));
+                else
+                {
+                    vec23 = new Vector2(
+                        Mathf.Cos(averageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)),
+                        Mathf.Sin(averageRad23) * thickness * (1f / Mathf.Sin(radianDiff23 / 2)));
+                }
             }
 
             //Then store it
@@ -273,7 +387,9 @@ namespace BlockGeneration
 
         private void FourEdgedThickening(Node node, float thickness)
         {
-            if (node.Edges.Count != 4) throw new ArgumentException("Parameter node doesn't have exactly four edges", nameof(node)); //this only work for nodes, which has four edges
+            //this only work for nodes, which has four edges
+            if (node.Edges.Count != 4) 
+                throw new ArgumentException("Parameter node doesn't have exactly four edges", nameof(node));
 
             bool majorWithMinor = false;
 
@@ -283,8 +399,20 @@ namespace BlockGeneration
             Edge edge3 = node.Edges[2];
             Edge edge4 = node.Edges[3];
 
-            if (!(graph.MajorEdges.Contains(edge1) && graph.MajorEdges.Contains(edge2) && graph.MajorEdges.Contains(edge3) && graph.MajorEdges.Contains(edge4)) && 
-                !(graph.MinorEdges.Contains(edge1) && graph.MinorEdges.Contains(edge2) && graph.MinorEdges.Contains(edge3) && graph.MinorEdges.Contains(edge4))) majorWithMinor = true;
+            if (!(
+                    graph.MajorEdges.Contains(edge1) 
+                    && graph.MajorEdges.Contains(edge2)
+                    && graph.MajorEdges.Contains(edge3) 
+                    && graph.MajorEdges.Contains(edge4))
+                && !(
+                    graph.MinorEdges.Contains(edge1)
+                    && graph.MinorEdges.Contains(edge2)
+                    && graph.MinorEdges.Contains(edge3)
+                    && graph.MinorEdges.Contains(edge4)))
+            {
+                majorWithMinor = true;
+            }
+
 
             //radians from node
             float radian1 = edge1.NodeA == node ? edge1.DirRadianFromA : edge1.DirRadianFromB;
@@ -317,10 +445,18 @@ namespace BlockGeneration
             float averageRadBase2Common1 = AverageRadianFromTwoEdges(baseEdge2, commonEdge1, node);
             float averageRadBase2Common2 = AverageRadianFromTwoEdges(baseEdge2, commonEdge2, node);
 
-            if (!CorrectFourEdgedAverage(averageRadBase1Common1, baseEdge1, baseEdge2, commonEdge2, node)) averageRadBase1Common1 += Mathf.PI;
-            if (!CorrectFourEdgedAverage(averageRadBase1Common2, baseEdge1, baseEdge2, commonEdge1, node)) averageRadBase1Common2 += Mathf.PI;
-            if (!CorrectFourEdgedAverage(averageRadBase2Common1, baseEdge2, baseEdge1, commonEdge2, node)) averageRadBase2Common1 += Mathf.PI;
-            if (!CorrectFourEdgedAverage(averageRadBase2Common2, baseEdge2, baseEdge1, commonEdge1, node)) averageRadBase2Common2 += Mathf.PI;
+            if (!CorrectFourEdgedAverage(
+                    averageRadBase1Common1, baseEdge1, baseEdge2, commonEdge2, node))
+                averageRadBase1Common1 += Mathf.PI;
+            if (!CorrectFourEdgedAverage(
+                    averageRadBase1Common2, baseEdge1, baseEdge2, commonEdge1, node))
+                averageRadBase1Common2 += Mathf.PI;
+            if (!CorrectFourEdgedAverage(
+                    averageRadBase2Common1, baseEdge2, baseEdge1, commonEdge2, node))
+                averageRadBase2Common1 += Mathf.PI;
+            if (!CorrectFourEdgedAverage(
+                    averageRadBase2Common2, baseEdge2, baseEdge1, commonEdge1, node))
+                averageRadBase2Common2 += Mathf.PI;
 
             //4 final vectors to use for thickening
             Vector2 vecB1C1;
@@ -334,40 +470,88 @@ namespace BlockGeneration
             float radianDiffB2C2 = RadianDifferenceFromTwoEdges(baseEdge2, commonEdge2, node);
 
             //If one of the crossing is a Major-Minor crossing, make the vectors in a different way:
-            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge1)) || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge1)))
+            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge1))
+                || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge1)))
+            {
                 vecB1C1 = MajorMinorCrossingThickening(baseEdge1, commonEdge1, node, radianDiffB1C1);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge1))
-                     vecB1C1 = new Vector2(Mathf.Cos(averageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)), Mathf.Sin(averageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)));            
-                else vecB1C1 = new Vector2(Mathf.Cos(averageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)), Mathf.Sin(averageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)));
+                {
+                    vecB1C1 = new Vector2(
+                         Mathf.Cos(averageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)),
+                         Mathf.Sin(averageRadBase1Common1) * thickness / 2 * (1f / Mathf.Sin(radianDiffB1C1 / 2)));
+                    
+                }            
+                else {
+                    vecB1C1 = new Vector2(
+                        Mathf.Cos(averageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)),
+                        Mathf.Sin(averageRadBase1Common1) * thickness * (1f / Mathf.Sin(radianDiffB1C1 / 2)));
+                    
+                }
             }
 
-            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge2)) || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge1)))
+            if ((graph.MajorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge2))
+                || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge1)))
+            {
                 vecB1C2 = MajorMinorCrossingThickening(baseEdge1, commonEdge2, node, radianDiffB1C2);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(baseEdge1) && graph.MinorEdges.Contains(commonEdge2))
-                     vecB1C2 = new Vector2(Mathf.Cos(averageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)), Mathf.Sin(averageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
-                else vecB1C2 = new Vector2(Mathf.Cos(averageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)), Mathf.Sin(averageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
+                {
+                    vecB1C2 = new Vector2(
+                        Mathf.Cos(averageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)),
+                        Mathf.Sin(averageRadBase1Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
+                }
+                else
+                {
+                    vecB1C2 = new Vector2(
+                        Mathf.Cos(averageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)),
+                        Mathf.Sin(averageRadBase1Common2) * thickness * (1f / Mathf.Sin(radianDiffB1C2 / 2)));
+                }
             }
 
-            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge1)) || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge2)))
+            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge1))
+                || (graph.MajorEdges.Contains(commonEdge1) && graph.MinorEdges.Contains(baseEdge2)))
+            {
                 vecB2C1 = MajorMinorCrossingThickening(baseEdge2, commonEdge1, node, radianDiffB2C1);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge1))
-                     vecB2C1 = new Vector2(Mathf.Cos(averageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)), Mathf.Sin(averageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
-                else vecB2C1 = new Vector2(Mathf.Cos(averageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)), Mathf.Sin(averageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
+                {
+                    vecB2C1 = new Vector2(
+                        Mathf.Cos(averageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)),
+                        Mathf.Sin(averageRadBase2Common1) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
+                }
+                else {
+                    vecB2C1 = new Vector2(
+                        Mathf.Cos(averageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)),
+                        Mathf.Sin(averageRadBase2Common1) * thickness * (1f / Mathf.Sin(radianDiffB2C1 / 2)));
+                }
             }
 
-            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge2)) || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge2)))
+            if ((graph.MajorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge2))
+                || (graph.MajorEdges.Contains(commonEdge2) && graph.MinorEdges.Contains(baseEdge2)))
+            {
                 vecB2C2 = MajorMinorCrossingThickening(baseEdge2, commonEdge2, node, radianDiffB2C2);
+            }
             else
             {
                 if (majorWithMinor && graph.MinorEdges.Contains(baseEdge2) && graph.MinorEdges.Contains(commonEdge2))
-                     vecB2C2 = new Vector2(Mathf.Cos(averageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)), Mathf.Sin(averageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
-                else vecB2C2 = new Vector2(Mathf.Cos(averageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)), Mathf.Sin(averageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
+                {
+                    vecB2C2 = new Vector2(
+                        Mathf.Cos(averageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)),
+                        Mathf.Sin(averageRadBase2Common2) * thickness/2 * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
+                }
+                else
+                {
+                    vecB2C2 = new Vector2(
+                        Mathf.Cos(averageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)),
+                        Mathf.Sin(averageRadBase2Common2) * thickness * (1f / Mathf.Sin(radianDiffB2C2 / 2)));
+                }
             }
 
             //THEN STORE IT
@@ -463,6 +647,56 @@ namespace BlockGeneration
             else return false;
         }
 
+
+        
+        /**
+         * BlOCK THINNING
+         */
+
+        private Block GetTinnedBlock(Block baseBlock, float sideWalkThickness)
+        {
+            var blockDelegate1 = new Block();
+            var blockDelegate2 = new Block();
+
+            for (int i = 0; i < baseBlock.Nodes.Count; i++)
+            {
+                var currentNode = baseBlock.Nodes[i].GetNodeForm();
+                var nextNode = (i == baseBlock.Nodes.Count - 1) 
+                    ? baseBlock.Nodes[0].GetNodeForm() 
+                    : baseBlock.Nodes[i + 1].GetNodeForm();
+                var lastNode = (i == 0)
+                    ? baseBlock.Nodes[baseBlock.Nodes.Count - 1].GetNodeForm()
+                    : baseBlock.Nodes[i - 1].GetNodeForm();
+                
+                var currentEdge = new Edge(currentNode, nextNode);
+                var lastEdge = new Edge(lastNode, currentNode);
+                
+                currentNode.Edges.Clear();
+                currentNode.Edges.Add(lastEdge);
+                currentNode.Edges.Add(currentEdge);
+
+                var newBlockNodes = GetTwoEdgedThickenedNodes(currentNode, sideWalkThickness);
+                var newBlockNode1 = newBlockNodes[0];
+                var newBlockNode2 = newBlockNodes[1];
+
+                if (Orientation(currentEdge, newBlockNode1) > 0)
+                {
+                    blockDelegate1.Nodes.Add(newBlockNode1);
+                    blockDelegate2.Nodes.Add(newBlockNode2);
+                }
+                else
+                {
+                    blockDelegate2.Nodes.Add(newBlockNode1);
+                    blockDelegate1.Nodes.Add(newBlockNode2);
+                }
+            }
+
+            var boundingRect1 = BoundingService.GetMinBoundingRectangle(blockDelegate1);
+            var boundingRect2 = BoundingService.GetMinBoundingRectangle(blockDelegate2);
+
+            return boundingRect1.GetArea() > boundingRect2.GetArea() ? blockDelegate2 : blockDelegate1;
+        }
+        
 
 
         /**
