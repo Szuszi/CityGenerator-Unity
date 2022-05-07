@@ -24,9 +24,11 @@ public class CityGenerator : MonoBehaviour
     private List<BoundingRectangle> boundingRectangles;
     private float blockHeight = 0.02f;
 
-    [Header("Maximum Curve between Roads")]
+    [Header("Major road generation")]
     [Range(0, 20)]
-    public int maxDegree = 2;
+    public int maxDegreeInCurves = 2;
+    [Range(0.03f, 0.1f)]
+    public float branchingProbability = 0.075f;
 
     [Header("Maximum Number of Roads")]
     public int maxMajorRoad = 1000;
@@ -90,7 +92,7 @@ public class CityGenerator : MonoBehaviour
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
         //ROAD GENERATION
-        MajorGenerator majorGen = new MajorGenerator(rand, mapSize, maxMajorRoad, maxDegree, roadGraph);
+        MajorGenerator majorGen = new MajorGenerator(rand, mapSize, maxMajorRoad, maxDegreeInCurves, branchingProbability, roadGraph);
         majorGen.Run();
         MinorGenerator minorGen = new MinorGenerator(rand, mapSize, maxMinorRoad, roadGraph, majorGen.GetRoadSegments());
         minorGen.Run();

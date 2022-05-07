@@ -19,12 +19,14 @@ namespace RoadGeneration
         private readonly int border;
         private readonly int maxSegment;
         private readonly int maxLean;
+        private readonly float branchProbability;
 
         private readonly Graph graph;
         
         private const int RoadLength = 10;
 
-        public MajorGenerator(System.Random seededRandom, int mapSize, int maxRoad, int maxDegree, Graph graphToBuild)
+
+        public MajorGenerator(System.Random seededRandom, int mapSize, int maxRoad, int maxDegree, float branchingChance, Graph graphToBuild)
         {
             globalGoalsRoads = new List<RoadSegment>();
             queue = new List<RoadSegment>();
@@ -34,6 +36,7 @@ namespace RoadGeneration
             border = mapSize;
             maxSegment = maxRoad;
             maxLean = maxDegree;
+            branchProbability = branchingChance;
 
             graph = graphToBuild;
         }
@@ -97,21 +100,30 @@ namespace RoadGeneration
             var dirVector = segment.getDirVector();
 
             //BRANCHING
-            int branchRandom = rand.Next(0, 40); //Branching chance is 3 out of 40
+            int maxInt = (int) Math.Round(3 / branchProbability);
+            if (branchProbability > 0.3) //Maximum branch probability is 3 out of 10 (0.3)
+            {
+                maxInt = 6;
+            }
+            else if (branchProbability < 0.03) //Minimum branch probability is 3 out of 100 (0.03)
+            {
+                maxInt = 100;
+            }
+            int branchRandom = rand.Next(0, maxInt);
 
-            if (branchRandom == 4) //At every 40th points approx. the road branches out to the RIGHT
+            if (branchRandom == 1) //the road branches out to the RIGHT
             {
                 var normalVector = new Vector2(dirVector.y, -dirVector.x);
                 RoadSegment branchedSegment = CalcNewRoadSegment(segment.NodeTo, normalVector, 0);
                 globalGoalsRoads.Add(branchedSegment);
             }
-            else if (branchRandom == 5) //At every other 40th points approx. the road branches out to the LEFT
+            else if (branchRandom == 2) //The road branches out to the LEFT
             {
                 var normalVector = new Vector2(-dirVector.y, dirVector.x);
                 RoadSegment branchedSegment =  CalcNewRoadSegment(segment.NodeTo, normalVector, 0);
                 globalGoalsRoads.Add(branchedSegment);
             }
-            else if (branchRandom == 6) //At every another 40th points approx. the road branches out to BOTH DIRECTIONS
+            else if (branchRandom == 3) //The road branches out to BOTH DIRECTIONS
             {
                 var normalVector1 = new Vector2(dirVector.y, -dirVector.x);
                 var normalVector2 = new Vector2(-dirVector.y, dirVector.x);
