@@ -28,8 +28,6 @@ namespace BlockDivision
             
             if (NormalVector.magnitude == 0)
             {
-                Debug.Log($"first Node: [{onePoint.X}|{onePoint.Y}] " +
-                            $"other Node: [{otherPoint.X}|{otherPoint.Y}] ");
                 throw new ArgumentException("Normal cannot be null", nameof(NormalVector));
             }
         }

@@ -24,9 +24,14 @@ namespace RoadGeneration
         private readonly Graph graph;
         
         private const int RoadLength = 10;
-
-
-        public MajorGenerator(System.Random seededRandom, int mapSize, int maxRoad, int maxDegree, float branchingChance, Graph graphToBuild)
+        
+        public MajorGenerator(
+            System.Random seededRandom, 
+            int mapSize, 
+            int maxRoad, 
+            int maxDegree, 
+            float branchingChance, 
+            Graph graphToBuild)
         {
             globalGoalsRoads = new List<RoadSegment>();
             queue = new List<RoadSegment>();
@@ -50,7 +55,7 @@ namespace RoadGeneration
                 RoadSegment current = queue[0];
                 queue.RemoveAt(0);
 
-                if (!CheckLocalConstraint(current)) continue;
+                if (!CheckLocalConstraints(current)) continue;
                 segments.Add(current);
                 AddToGraph(current);
 
@@ -60,7 +65,7 @@ namespace RoadGeneration
             if (segments.Count == maxSegment) Debug.Log("Major Roads reached maximal amount");
         }
 
-        private bool CheckLocalConstraint(RoadSegment segment)
+        private bool CheckLocalConstraints(RoadSegment segment)
         {
             foreach (RoadSegment road in segments)
             {
@@ -97,7 +102,7 @@ namespace RoadGeneration
         {
             if (segment.EndSegment) return;
             globalGoalsRoads.Clear();
-            var dirVector = segment.getDirVector();
+            var dirVector = segment.GetDirVector();
 
             //BRANCHING
             int maxInt = (int) Math.Round(3 / branchProbability);
@@ -144,7 +149,7 @@ namespace RoadGeneration
 
         private RoadSegment GetContinuingRoadSegment(RoadSegment segment)
         {
-            var dirVector = segment.getDirVector();
+            var dirVector = segment.GetDirVector();
             
             if (maxLean < 1) return CalcNewRoadSegment(segment.NodeTo, dirVector, 0);
             
@@ -199,8 +204,8 @@ namespace RoadGeneration
             //First Generate a number nearby the middle quarter of the map
             int sampleX = rand.Next(0, (border * 100));
             int sampleY = rand.Next(0, (border * 100));
-            float starterX = (sampleX / 100.0f) - (float)border/3;
-            float starterY = (sampleY / 100.0f) - (float)border/3;
+            float starterX = (sampleX / 100.0f) - (float)border/2;
+            float starterY = (sampleY / 100.0f) - (float)border/2;
             var startNode = new Node(starterX, starterY);
 
             //Secondly Generate a vector which determines the two starting directions
@@ -248,11 +253,10 @@ namespace RoadGeneration
             return dirVector;
         }
 
-        private bool IsClose(Node A, Node B)
+        private bool IsClose(Node a, Node b)
         {
             float idealRadius = RoadLength * 0.8f;
-            //If the two points are closer than the ideal radius
-            if (((float)Math.Pow(A.X - B.X, 2) + (float)Math.Pow(A.Y - B.Y, 2)) < (idealRadius * idealRadius)) return true;
+            if (a.getDistance(b) < idealRadius) return true;
             return false;
         }
 

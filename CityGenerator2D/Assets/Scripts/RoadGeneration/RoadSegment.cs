@@ -43,16 +43,16 @@ namespace RoadGeneration
             //Special case (rare, but need to handle) - happens if two segments are collinear - we need to check if they are overlap or not
             if (o1 == 0 && o2 == 0 && o3 == 0 && o4 == 0)
             {
-                if (o1 == 0 && OnSegment(NodeFrom, NodeTo, road.NodeTo)) return true;
-                if (o2 == 0 && OnSegment(NodeFrom, NodeTo, road.NodeFrom)) return true;
-                if (o3 == 0 && OnSegment(road.NodeFrom, road.NodeTo, NodeFrom)) return true;
-                if (o4 == 0 && OnSegment(road.NodeFrom, road.NodeTo, NodeTo)) return true;
+                if (OnSegment(NodeFrom, NodeTo, road.NodeTo)) return true;
+                if (OnSegment(NodeFrom, NodeTo, road.NodeFrom)) return true;
+                if (OnSegment(road.NodeFrom, road.NodeTo, NodeFrom)) return true;
+                if (OnSegment(road.NodeFrom, road.NodeTo, NodeTo)) return true;
             }
 
             return false;
         }
 
-        public Vector2 getDirVector()
+        public Vector2 GetDirVector()
         {
             return new Vector2(NodeTo.X - NodeFrom.X, NodeTo.Y - NodeFrom.Y);
         }

@@ -24,11 +24,15 @@ public class CityGenerator : MonoBehaviour
     private List<BoundingRectangle> boundingRectangles;
     private float blockHeight = 0.02f;
 
-    [Header("Major road generation")]
+    [Header("Major Road generation")]
     [Range(0, 20)]
     public int maxDegreeInCurves = 2;
     [Range(0.03f, 0.1f)]
     public float branchingProbability = 0.075f;
+    
+    [Header("Minor Road generation")]
+    [Range(0.02f, 0.2f)] 
+    public float crossingDeletionProbability = 0.1f;
 
     [Header("Maximum Number of Roads")]
     public int maxMajorRoad = 1000;
@@ -92,9 +96,11 @@ public class CityGenerator : MonoBehaviour
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
         //ROAD GENERATION
-        MajorGenerator majorGen = new MajorGenerator(rand, mapSize, maxMajorRoad, maxDegreeInCurves, branchingProbability, roadGraph);
+        MajorGenerator majorGen = new MajorGenerator(
+            rand, mapSize, maxMajorRoad, maxDegreeInCurves, branchingProbability, roadGraph);
         majorGen.Run();
-        MinorGenerator minorGen = new MinorGenerator(rand, mapSize, maxMinorRoad, roadGraph, majorGen.GetRoadSegments());
+        MinorGenerator minorGen = new MinorGenerator(
+            rand, mapSize, maxMinorRoad, crossingDeletionProbability,roadGraph, majorGen.GetRoadSegments());
         minorGen.Run();
 
         //ROAD GENERATION TIME, ROAD COUNT
@@ -102,7 +108,7 @@ public class CityGenerator : MonoBehaviour
         Debug.Log("Road generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
         Debug.Log(majorGen.GetRoadSegments().Count + " major road generated");
         Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
-
+        
         //BLOCK GENERATION
         BlockGenerator blockGen = new BlockGenerator(roadGraph, majorThickness, minorThickness, blockHeight);
         blockGen.Generate();
