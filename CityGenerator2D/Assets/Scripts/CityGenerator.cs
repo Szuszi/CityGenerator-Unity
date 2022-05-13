@@ -110,7 +110,7 @@ public class CityGenerator : MonoBehaviour
         Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
         
         //BLOCK GENERATION
-        BlockGenerator blockGen = new BlockGenerator(roadGraph, majorThickness, minorThickness, blockHeight);
+        BlockGenerator blockGen = new BlockGenerator(roadGraph, mapSize, majorThickness, minorThickness, blockHeight);
         blockGen.Generate();
         blockNodes = blockGen.BlockNodes;
         blocks = blockGen.Blocks;

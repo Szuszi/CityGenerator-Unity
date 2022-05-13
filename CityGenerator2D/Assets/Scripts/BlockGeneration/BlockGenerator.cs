@@ -17,8 +17,9 @@ namespace BlockGeneration
         private readonly float majorRoadThickness;
         private readonly float minorRoadThickness;
         private readonly float blockHeight;
+        private readonly int border;
 
-        public BlockGenerator(Graph graphToUse, float majorThickness, float minorThickness, float blockHeight)
+        public BlockGenerator(Graph graphToUse, int mapSize, float majorThickness, float minorThickness, float blockHeight)
         {
             graph = graphToUse;
             BlockNodes = new List<BlockNode>();
@@ -28,6 +29,7 @@ namespace BlockGeneration
             majorRoadThickness = majorThickness;
             minorRoadThickness = minorThickness;
             this.blockHeight = blockHeight;
+            border = mapSize;
         }
 
         public void Generate()
@@ -143,17 +145,23 @@ namespace BlockGeneration
             
             foreach (Block block in ThinnedBlocks)
             {
+                var blockIndex = ThinnedBlocks.IndexOf(block);
+
                 if (block.Nodes.Count > 10)
                 {
-                    removableIndexes.Add(ThinnedBlocks.IndexOf(block));
+                    removableIndexes.Add(blockIndex);
                     continue;
                 }
 
                 var boundingRect = BoundingService.GetMinBoundingRectangle(block);
                 if (boundingRect.GetArea() < 10f)
                 {
-                    removableIndexes.Add(ThinnedBlocks.IndexOf(block));
+                    removableIndexes.Add(blockIndex);
+                    continue;
                 }
+
+                if (block.Nodes.Exists(IsOutsideOfTheMap))
+                    removableIndexes.Add(blockIndex);
             }
 
             for (int i = ThinnedBlocks.Count - 1; i > -1; i--)
@@ -163,6 +171,14 @@ namespace BlockGeneration
                     ThinnedBlocks.RemoveAt(i);
                 }
             }
+        }
+        
+        private bool IsOutsideOfTheMap(BlockNode node)
+        {
+            int maxMapSize = border + 1;
+            if (node.X > maxMapSize || node.X < -maxMapSize || node.Y > maxMapSize || node.Y < -maxMapSize)
+                return true;
+            return false;
         }
 
 
@@ -586,7 +602,8 @@ namespace BlockGeneration
          * BLOCK FORMING
          */
 
-        //Recursive function, which forms a new Block from a starting BlockNode. Returns true if forming finished. Returns false if forming failed.
+        //Recursive function, which forms a new Block from a starting BlockNode.
+        //Returns true if forming finished. Returns false if forming failed.
         private bool FormBlock(BlockNode node, Edge edgeToSearch, Block blockToBuild, int iteration)
         {
             if (blockToBuild.Nodes.Contains(node)) return true; //We got around
@@ -602,12 +619,15 @@ namespace BlockGeneration
             //Special case: One edged node
             if(node.Edges.Count == 1)
             {
-                Node currentNode = edgeToSearch.NodeA.BlockNodes.Contains(node) ? edgeToSearch.NodeA : edgeToSearch.NodeB;
-                BlockNode otherBlockNode = currentNode.BlockNodes[0] == node ? currentNode.BlockNodes[1] : currentNode.BlockNodes[0];
+                Node currentNode = edgeToSearch.NodeA.BlockNodes.Contains(node) 
+                    ? edgeToSearch.NodeA : edgeToSearch.NodeB;
+                BlockNode otherBlockNode = currentNode.BlockNodes[0] == node 
+                    ? currentNode.BlockNodes[1] : currentNode.BlockNodes[0];
 
                 if (!blockToBuild.Nodes.Contains(otherBlockNode))
                 {
-                    if (FormBlock(otherBlockNode, edgeToSearch, blockToBuild, iteration + 1)) //If it's the first blockNode, go for 2nd node, if it's the second, operate normally
+                    //If it's the first blockNode, go for 2nd node, if it's the second, operate normally
+                    if (FormBlock(otherBlockNode, edgeToSearch, blockToBuild, iteration + 1))
                     {
                         return true;
                     }
@@ -622,7 +642,8 @@ namespace BlockGeneration
             {
                 if (blockNode.Edges.Contains(edgeToSearch))
                 {
-                    if (Orientation(edgeToSearch, blockNode) == currentBlockOrientationToEdge) nextBlockNode = blockNode;
+                    if (Orientation(edgeToSearch, blockNode) == currentBlockOrientationToEdge) 
+                        nextBlockNode = blockNode;
                 }
             }
 
@@ -639,7 +660,8 @@ namespace BlockGeneration
             }
             else
             {
-                nextEdgeToSearch = nextBlockNode.Edges[0] == edgeToSearch ? nextBlockNode.Edges[1] : nextBlockNode.Edges[0];
+                nextEdgeToSearch = nextBlockNode.Edges[0] == edgeToSearch 
+                    ? nextBlockNode.Edges[1] : nextBlockNode.Edges[0];
             }
 
             //Recursive call to the next node
@@ -706,7 +728,8 @@ namespace BlockGeneration
         //Returns an average radian between two given edge, which has the given common node
         private float AverageRadianFromTwoEdges(Edge edge1, Edge edge2, Node node)
         {
-            if (!node.Edges.Contains(edge1) || !node.Edges.Contains(edge2)) throw new ArgumentException("Parameter node doesn't connect the two edges", nameof(node));
+            if (!node.Edges.Contains(edge1) || !node.Edges.Contains(edge2)) 
+                throw new ArgumentException("Parameter node doesn't connect the two edges", nameof(node));
 
             float dirRad1;
             float dirRad2;
@@ -717,7 +740,8 @@ namespace BlockGeneration
             if (edge2.NodeA == node) dirRad2 = edge2.DirRadianFromA;
             else dirRad2 = edge2.DirRadianFromB;
 
-            if(RadianDifference((dirRad1 + dirRad2) / 2, dirRad2) > RadianDifference(((dirRad1 + dirRad2) / 2) + Mathf.PI, dirRad2)) return ((dirRad1 + dirRad2) / 2 + Mathf.PI);
+            if(RadianDifference((dirRad1 + dirRad2) / 2, dirRad2) > RadianDifference(((dirRad1 + dirRad2) / 2) + Mathf.PI, dirRad2)) 
+                return ((dirRad1 + dirRad2) / 2 + Mathf.PI);
             return (dirRad1 + dirRad2) / 2;
         }
 
@@ -734,14 +758,22 @@ namespace BlockGeneration
 
             if (graph.MajorEdges.Contains(edge2)) //Edge2 is the MajorEdge
             {
-                Vector2 edge2Vec = new Vector2(Mathf.Cos(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
-                Vector2 edge1Vec = new Vector2(Mathf.Cos(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge2Vec = new Vector2(
+                    Mathf.Cos(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)),
+                    Mathf.Sin(dirRad2) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge1Vec = new Vector2(
+                    Mathf.Cos(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)),
+                    Mathf.Sin(dirRad1) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
                 return edge1Vec + edge2Vec;
             }
             else //Edge1 is the MajorEdge
             {
-                Vector2 edge1Vec = new Vector2(Mathf.Cos(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
-                Vector2 edge2Vec = new Vector2(Mathf.Cos(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)), Mathf.Sin(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge1Vec = new Vector2(
+                    Mathf.Cos(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)),
+                    Mathf.Sin(dirRad1) * minorRoadThickness * (1f / Mathf.Sin(radianDiff)));
+                Vector2 edge2Vec = new Vector2(
+                    Mathf.Cos(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)),
+                    Mathf.Sin(dirRad2) * majorRoadThickness * (1f / Mathf.Sin(radianDiff)));
                 return edge1Vec + edge2Vec;
             }
         }
@@ -749,7 +781,8 @@ namespace BlockGeneration
         //Returns the radian difference between the two given edge, which has the given common node
         private float RadianDifferenceFromTwoEdges(Edge edge1, Edge edge2, Node node)
         {
-            if (!node.Edges.Contains(edge1) || !node.Edges.Contains(edge2)) throw new ArgumentException("Parameter node doesn't connect the two edges", nameof(node));
+            if (!node.Edges.Contains(edge1) || !node.Edges.Contains(edge2)) 
+                throw new ArgumentException("Parameter node doesn't connect the two edges", nameof(node));
 
             float dirRad1;
             float dirRad2;
@@ -770,7 +803,9 @@ namespace BlockGeneration
             if (edgeNotIncluded.NodeA == node) radiantFromNode = edgeNotIncluded.DirRadianFromA;
             else radiantFromNode = edgeNotIncluded.DirRadianFromB;
 
-            if (RadianDifference(radiantFromNode, average) < RadianDifference(radiantFromNode, average + Mathf.PI)) return false;
+            if (RadianDifference(radiantFromNode, average) < RadianDifference(radiantFromNode, average + Mathf.PI)) 
+                return false;
+
             return true;
         }
 
@@ -789,7 +824,9 @@ namespace BlockGeneration
             if (edgeIncluded.NodeA == node) radianFromIncludedNode = edgeIncluded.DirRadianFromA;
             else radianFromIncludedNode = edgeIncluded.DirRadianFromB;
 
-            if ((RadianDifference(average, radianFromIncludedNode) > RadianDifference(average, radianFromNode1)) || (RadianDifference(average, radianFromIncludedNode) > RadianDifference(average, radianFromNode2))) return false;
+            if ((RadianDifference(average, radianFromIncludedNode) > RadianDifference(average, radianFromNode1)) 
+                || (RadianDifference(average, radianFromIncludedNode) > RadianDifference(average, radianFromNode2))) 
+                return false;
        
             return true;
         }
@@ -817,7 +854,8 @@ namespace BlockGeneration
         private int Orientation(Edge baseEdge, BlockNode testNode) 
         {
             //Orientation can be calculated with the cross product of two Vectors made from the 3 Nodes
-            float val = (baseEdge.NodeA.Y - testNode.Y) * (baseEdge.NodeB.X - testNode.X) - (baseEdge.NodeA.X - testNode.X) * (baseEdge.NodeB.Y - testNode.Y);
+            float val = (baseEdge.NodeA.Y - testNode.Y) * (baseEdge.NodeB.X - testNode.X)
+                        - (baseEdge.NodeA.X - testNode.X) * (baseEdge.NodeB.Y - testNode.Y);
 
             if (val > 0.00001f) return 1; //clockwise
             if (val < -0.00001f) return -1; //anticlockwise
