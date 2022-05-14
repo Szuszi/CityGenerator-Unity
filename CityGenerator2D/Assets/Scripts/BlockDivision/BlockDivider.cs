@@ -38,6 +38,13 @@ namespace BlockDivision
             int mapSize
         )
         {
+            if (minBuildingHeight > maxBuildingHeight)
+            {
+                throw new ArgumentException(
+                    "minimum height of a building has to be smaller than the maximum height of a building",
+                    nameof(minBuildingHeight));
+            }
+
             foreach (var lot in Lots)
             {
                 var height = (float) rand.NextDouble() * maxBuildingHeight + minBuildingHeight;
@@ -60,7 +67,7 @@ namespace BlockDivision
                     
                 if (lot.IsPark)
                 {
-                    height = baseHeight;
+                    height = baseHeight + baseHeight / 3;
                 }
 
                 lot.Height = height;

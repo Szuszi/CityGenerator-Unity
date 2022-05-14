@@ -26,7 +26,7 @@ public class CityGenerator : MonoBehaviour
 
     [Header("Major Road generation")]
     [Range(0, 20)]
-    public int maxDegreeInCurves = 2;
+    public int maxDegreeInCurves = 10;
     [Range(0.03f, 0.1f)]
     public float branchingProbability = 0.075f;
     
@@ -35,22 +35,22 @@ public class CityGenerator : MonoBehaviour
     public float crossingDeletionProbability = 0.1f;
 
     [Header("Maximum Number of Roads")]
-    public int maxMajorRoad = 1000;
+    public int maxMajorRoad = 2000;
     public int maxMinorRoad = 10000;
 
     [Header("Thickness of Roads")]
     [Range(0.1f, 2.5f)]
-    public float majorThickness = 2.0f;
+    public float majorThickness = 2.5f;
     [Range(0.1f, 2.5f)]
-    public float minorThickness = 0.5f;
+    public float minorThickness = 0.9f;
 
     [Header("Seed and Size")]
-    public int mapSize = 200;
-    public int seed = 7;
+    public int mapSize = 300;
+    public int seed = 13;
     
     [Header("Building generation")] 
-    public float minBuildHeight = 1;
-    public float maxBuildHeight = 10;
+    public float minBuildHeight = 2;
+    public float maxBuildHeight = 15;
 
     [Header("Sidewalk generation")]
     [Range(0.1f, 1f)]
@@ -140,7 +140,7 @@ public class CityGenerator : MonoBehaviour
         blockMeshes = blockMeshGen.BlockMeshes;
         
         //LOT MESH GENERATION
-        MeshGenerator lotMeshGen = new MeshGenerator(lots, blockHeight);
+        MeshGenerator lotMeshGen = new MeshGenerator(lots, blockHeight + blockHeight / 3);
         lotMeshGen.GenerateMeshes();
 
         convexBlocks = lotMeshGen.ConvexBlocks;

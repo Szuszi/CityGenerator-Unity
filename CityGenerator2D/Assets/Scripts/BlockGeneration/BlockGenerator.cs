@@ -184,7 +184,7 @@ namespace BlockGeneration
         
         private bool IsOutsideOfTheMap(BlockNode node)
         {
-            int maxMapSize = border + 1;
+            int maxMapSize = border + 2;
             if (node.X > maxMapSize || node.X < -maxMapSize || node.Y > maxMapSize || node.Y < -maxMapSize)
                 return true;
             return false;
