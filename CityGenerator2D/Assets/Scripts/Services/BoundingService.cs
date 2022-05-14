@@ -5,7 +5,7 @@ using GraphModel;
 
 namespace Services
 {
-    class BoundingService
+    static class BoundingService
     {
         public static BoundingRectangle GetMinBoundingRectangle(Block block)
         {

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Services
 {
-    class GizmoService
+    static class GizmoService
     {
         public static void DrawNodes(List<Node> nodes, Color color, float size)
         {

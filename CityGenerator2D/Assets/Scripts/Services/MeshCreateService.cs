@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Services
 {
-    class MeshCreateService
+    static class MeshCreateService
     {
         public static Mesh GenerateRoadMesh(int mapSize)
         {

@@ -58,7 +58,7 @@ namespace BlockDivision
                     height = height + minBuildingHeight;
                 }
                     
-                if (lot.Nodes.Count > 10)
+                if (lot.IsPark)
                 {
                     height = baseHeight;
                 }
@@ -75,6 +75,7 @@ namespace BlockDivision
             } 
             else if (block.Nodes.Count > 10)
             {
+                block.IsPark = true;
                 return new List<Block> {block};
             }
 
@@ -102,15 +103,14 @@ namespace BlockDivision
 
         private bool ValidBlock(Block block)
         {
-            //Here we need to check if the newly created block is valid
+            var boundingRectangle = BoundingService.GetMinBoundingRectangle(block);
             
             //Check if the size is not too small
-            if (BoundingService.GetMinBoundingRectangle(block).GetArea() < 10f) return false;
+            if (boundingRectangle.GetArea() < 10f) return false;
 
-            //Check if the aspect ratio is valid
-            //Check etc.
-            
-            // ...
+            //Check if the aspect ratio is not too big
+            if (boundingRectangle.GetAspectRatio() > 4f) return false;
+
             return true;
         }
 
@@ -178,15 +178,10 @@ namespace BlockDivision
 
             if (resultList.Count == 0)
             {
-                /*
-                Debug.Log("Division failed");
-                resultList.Add(blockToCut);
-                return resultList;
-                */
-                throw new InvalidOperationException("Slice failed to happen");
+                throw new InvalidOperationException("Slicing failed");
             }
 
-            //Calculate last Slice
+            //Calculate last block
             Block lastNewBlock = new Block();
 
             if (lastChangingNodeIdx != 0)

@@ -152,11 +152,11 @@ public class CityGenerator : MonoBehaviour
 
     private void GenerateGameObjects()
     {
-        GameObject separator = new GameObject();
+        var separator = new GameObject();
         separator.name = "===========";
 
         //Make RoadPlane
-        GameObject roadPlane = new GameObject();
+        var roadPlane = new GameObject();
         roadPlane.name = "Road Plane";
         roadPlane.AddComponent<MeshFilter>();
         roadPlane.AddComponent<MeshRenderer>();
@@ -166,40 +166,42 @@ public class CityGenerator : MonoBehaviour
         roadPlane.GetComponent<MeshRenderer>().material = roadMaterial;
 
         //Make Blocks
-        GameObject blockContainer = new GameObject();
+        var blockContainer = new GameObject();
         blockContainer.name = "Block Container";
 
         Material blockMaterial = Resources.Load<Material>("Material/BlockMaterial");
-        Material blockGreenMaterial = Resources.Load<Material>("Material/BlockGreenMaterial");
+        Material parkMaterial = Resources.Load<Material>("Material/BlockGreenMaterial");
 
         for (int i = 0; i < blockMeshes.Count; i++)
         {
-            GameObject block = new GameObject();
+            var block = new GameObject();
             block.name = "Block" + i.ToString();
             block.transform.parent = blockContainer.transform;
             block.AddComponent<MeshFilter>();
             block.AddComponent<MeshRenderer>();
             block.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(blockMeshes[i]);
 
-            if (blockMeshes[i].Block.Nodes.Count > 10) block.GetComponent<MeshRenderer>().material = blockGreenMaterial;
+            if (blockMeshes[i].Block.IsPark) block.GetComponent<MeshRenderer>().material = parkMaterial;
             else block.GetComponent<MeshRenderer>().material = blockMaterial;
         }
         
         //Make Lots
-        GameObject lotContainer = new GameObject();
+        var lotContainer = new GameObject();
         lotContainer.name = "Lot Container";
 
         Material lotMaterial = Resources.Load<Material>("Material/BlockMaterial");
 
         for (int i = 0; i < lotMeshes.Count; i++)
         {
-            GameObject lot = new GameObject();
+            var lot = new GameObject();
             lot.name = "Lot" + i.ToString();
             lot.transform.parent = blockContainer.transform;
             lot.AddComponent<MeshFilter>();
             lot.AddComponent<MeshRenderer>();
             lot.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(lotMeshes[i]);
-            lot.GetComponent<MeshRenderer>().material = lotMaterial;
+            
+            if (lotMeshes[i].Block.IsPark) lot.GetComponent<MeshRenderer>().material = parkMaterial;
+            else lot.GetComponent<MeshRenderer>().material = lotMaterial;
         }
     }
 

@@ -59,7 +59,7 @@ namespace BlockDivision
             Vector2 nodeAToB = VectorService.NodesToDirection(longerEdge.NodeA, longerEdge.NodeB);
             int randomValue = rand.Next(0, 4);
             float offsetToUse = 0.3f + 0.1f * randomValue;
-            
+
             var middlePoint = new Node
             (
                 (longerEdge.NodeA.X + nodeAToB.x * offsetToUse),
@@ -96,6 +96,17 @@ namespace BlockDivision
             var secondEdgeLength = VectorService.NodesToDirection(Edges[1].NodeA, Edges[1].NodeB).magnitude;
 
             return firstEdgeLength * secondEdgeLength;
+        }
+        
+        public float GetAspectRatio()
+        {
+            var firstEdgeLength = VectorService.NodesToDirection(Edges[0].NodeA, Edges[0].NodeB).magnitude;
+            var secondEdgeLength = VectorService.NodesToDirection(Edges[1].NodeA, Edges[1].NodeB).magnitude;
+            
+
+            return firstEdgeLength >= secondEdgeLength 
+                ? firstEdgeLength / secondEdgeLength 
+                : secondEdgeLength / firstEdgeLength;
         }
     }
 }

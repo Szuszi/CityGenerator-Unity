@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Services
 {
-    class VectorService
+    static class VectorService
     {
         public static Vector2 NodesToDirection(Node NodeA, Node NodeB)
         {

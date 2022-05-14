@@ -37,13 +37,22 @@ namespace BlockGeneration
             ThickenNodes();
             CreateBlocks();
             DeleteMapEdgeBlocks();
+
+            foreach (var block in Blocks)
+            {
+                if (block.Nodes.Count > 10)
+                {
+                    block.IsPark = true;
+                }
+            }
         }
         
         public void ThickenBlocks(float sidewalkThickness)
         {
-            foreach (Block block in Blocks)
+            foreach (var block in Blocks)
             {
-                var thinnedBlock = GetTinnedBlock(block, sidewalkThickness);
+                if (block.IsPark) continue;
+                var thinnedBlock = GetThinnedBlock(block, sidewalkThickness);
                 ThinnedBlocks.Add(thinnedBlock);
             }
 
@@ -54,7 +63,7 @@ namespace BlockGeneration
         private void ThickenNodes()
         {
             //First Thicken major nodes
-            foreach(Node node in graph.MajorNodes)
+            foreach(var node in graph.MajorNodes)
             {
                 if(node.Edges.Count == 1) OneEdgedThickening(node, majorRoadThickness);
                 else if(node.Edges.Count == 2) TwoEdgedThickening(node, majorRoadThickness);
@@ -66,7 +75,7 @@ namespace BlockGeneration
             }
 
             //Then Thicken minor nodes
-            foreach (Node node in graph.MinorNodes)
+            foreach (var node in graph.MinorNodes)
             {
                 if (node.Edges.Count == 1) OneEdgedThickening(node, minorRoadThickness);
                 else if (node.Edges.Count == 2) TwoEdgedThickening(node, minorRoadThickness);
@@ -81,7 +90,7 @@ namespace BlockGeneration
         //Connects the BlockNodes into one Block
         private void CreateBlocks()
         {
-            foreach(BlockNode blockNode in BlockNodes)
+            foreach(var blockNode in BlockNodes)
             {
                 if(blockNode.Block == null)
                 {
@@ -102,13 +111,13 @@ namespace BlockGeneration
         {
             List<Block> removable = new List<Block>();
 
-            foreach(Block block in Blocks)
+            foreach(var block in Blocks)
             {
                 //First Check if the First and Last node has the same edge.
                 bool sameEdgeFound = false;
-                foreach (Edge edge1 in block.Nodes[0].Edges)
+                foreach (var edge1 in block.Nodes[0].Edges)
                 {
-                    foreach(Edge edge2 in block.Nodes[block.Nodes.Count - 1].Edges)
+                    foreach(var edge2 in block.Nodes[block.Nodes.Count - 1].Edges)
                     {
                         if (edge1 == edge2) sameEdgeFound = true;
                     }
@@ -133,7 +142,7 @@ namespace BlockGeneration
                 }
             }
 
-            foreach(Block block in removable)
+            foreach(var block in removable)
             {
                 Blocks.Remove(block);
             }
@@ -143,7 +152,7 @@ namespace BlockGeneration
         {
             List<int> removableIndexes = new List<int>();
             
-            foreach (Block block in ThinnedBlocks)
+            foreach (var block in ThinnedBlocks)
             {
                 var blockIndex = ThinnedBlocks.IndexOf(block);
 
@@ -675,7 +684,7 @@ namespace BlockGeneration
          * BlOCK THINNING
          */
 
-        private Block GetTinnedBlock(Block baseBlock, float sideWalkThickness)
+        private Block GetThinnedBlock(Block baseBlock, float sideWalkThickness)
         {
             var blockDelegate1 = new Block();
             var blockDelegate2 = new Block();

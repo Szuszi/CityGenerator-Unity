@@ -8,7 +8,7 @@ namespace MeshGeneration
     class MeshGenerator
     {
         private readonly List<Block> blocks;
-        private float blockHeight;
+        private readonly float blockHeight;
 
         public List<Block> ConvexBlocks { get; private set; }
         public List<Block> ConcaveBlocks { get; private set; }
