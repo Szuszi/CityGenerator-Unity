@@ -343,18 +343,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67321ef99586cd4c8e1ce7185a8383c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mapSize: 300
+  seed: 13
   maxDegreeInCurves: 10
   branchingProbability: 0.075
   crossingDeletionProbability: 0.1
-  maxMajorRoad: 2000
+  maxMajorRoad: 3000
   maxMinorRoad: 10000
   majorThickness: 2.5
   minorThickness: 0.9
-  mapSize: 300
-  seed: 13
+  sidewalkThickness: 0.5
   minBuildHeight: 2
   maxBuildHeight: 15
-  sidewalkThickness: 0.5
   drawRoadNodes: 0
   drawRoads: 1
   drawBlockNodes: 0

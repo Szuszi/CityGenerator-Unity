@@ -24,6 +24,10 @@ public class CityGenerator : MonoBehaviour
     private List<BoundingRectangle> boundingRectangles;
     private float blockHeight = 0.02f;
 
+    [Header("Seed and Size")]
+    public int mapSize = 300;
+    public int seed = 13;
+    
     [Header("Major Road generation")]
     [Range(0, 20)]
     public int maxDegreeInCurves = 10;
@@ -44,17 +48,13 @@ public class CityGenerator : MonoBehaviour
     [Range(0.1f, 2.5f)]
     public float minorThickness = 0.9f;
 
-    [Header("Seed and Size")]
-    public int mapSize = 300;
-    public int seed = 13;
+    [Header("Sidewalk generation")]
+    [Range(0.1f, 1f)]
+    public float sidewalkThickness = 0.5f;
     
     [Header("Building generation")] 
     public float minBuildHeight = 2;
     public float maxBuildHeight = 15;
-
-    [Header("Sidewalk generation")]
-    [Range(0.1f, 1f)]
-    public float sidewalkThickness = 0.5f;
 
     [Header("Gizmos")]
     public bool drawRoadNodes;
@@ -93,6 +93,7 @@ public class CityGenerator : MonoBehaviour
 
     private void ThreadProc()
     {
+        System.Diagnostics.Stopwatch mainSw = System.Diagnostics.Stopwatch.StartNew();
         System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
         //ROAD GENERATION
@@ -108,27 +109,27 @@ public class CityGenerator : MonoBehaviour
         Debug.Log("Road generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
         Debug.Log(majorGen.GetRoadSegments().Count + " major road generated");
         Debug.Log(minorGen.GetRoadSegments().Count + " minor road generated");
-        
+
         //BLOCK GENERATION
         BlockGenerator blockGen = new BlockGenerator(roadGraph, mapSize, majorThickness, minorThickness, blockHeight);
         blockGen.Generate();
         blockNodes = blockGen.BlockNodes;
         blocks = blockGen.Blocks;
         Debug.Log(blockGen.Blocks.Count + " block generated");
-        
+
         //SIDEWALK GENERATION
         blockGen.ThickenBlocks(sidewalkThickness);
         thinnedBlocks = blockGen.ThinnedBlocks;
         Debug.Log("Sidewalk generation completed");
-        
+
         //BLOCK DIVISION
         sw = System.Diagnostics.Stopwatch.StartNew();
-        
+
         BlockDivider blockDiv = new BlockDivider(rand, thinnedBlocks, lots);
         blockDiv.DivideBlocks();
         blockDiv.SetBuildingHeights(minBuildHeight, maxBuildHeight, blockHeight, mapSize);
         boundingRectangles = blockDiv.BoundingRectangles;
-        
+
         //LOT GENERATION TIME, LOT COUNT
         sw.Stop();
         Debug.Log("Lot generation time taken: " + sw.Elapsed.TotalMilliseconds + " ms");
@@ -138,7 +139,7 @@ public class CityGenerator : MonoBehaviour
         MeshGenerator blockMeshGen = new MeshGenerator(blocks, blockHeight);
         blockMeshGen.GenerateMeshes();
         blockMeshes = blockMeshGen.BlockMeshes;
-        
+
         //LOT MESH GENERATION
         MeshGenerator lotMeshGen = new MeshGenerator(lots, blockHeight + blockHeight / 3);
         lotMeshGen.GenerateMeshes();
@@ -146,6 +147,9 @@ public class CityGenerator : MonoBehaviour
         convexBlocks = lotMeshGen.ConvexBlocks;
         concaveBlocks = lotMeshGen.ConcaveBlocks;
         lotMeshes = lotMeshGen.BlockMeshes;
+
+        mainSw.Stop();
+        Debug.Log("City generation time taken: " + mainSw.Elapsed.TotalMilliseconds + " ms");
 
         genReady = true;
     }
