@@ -195,7 +195,7 @@ public class CityGenerator : MonoBehaviour
         {
             var lot = new GameObject();
             lot.name = "Lot" + i.ToString();
-            lot.transform.parent = blockContainer.transform;
+            lot.transform.parent = lotContainer.transform;
             lot.AddComponent<MeshFilter>();
             lot.AddComponent<MeshRenderer>();
             lot.GetComponent<MeshFilter>().mesh = MeshCreateService.GenerateBlockMesh(lotMeshes[i]);
