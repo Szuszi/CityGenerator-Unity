@@ -2,7 +2,7 @@
 
 Procedural city generator made inside Unity. Project is in the Editor version `2020.3.37`
 
-Use the SampleScene to try it out! Generation attributes (such as seed, etc.) can be set in the GraphGenerator GameObject's properties.
+Use the SampleScene to try it out! Generation attributes (such as seed, etc.) can be set in the `City Generator` GameObject's properties.
 
 # Tutorial on YouTube
 
